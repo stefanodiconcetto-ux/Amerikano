@@ -189,7 +189,7 @@ input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(241,199,11
 .award-contract { font-weight: 800; }
 .award-detail { color: var(--ink); }
 .modal:has(.modal-x) #modal-cancel.ghost { display: none; }
-.player-stats span { display: grid; padding: 4px 6px; border-radius: 8px; background: rgba(255,255,255,.05); color: var(--muted); font-size: 10px; text-align: center; }
+.player-stats span, .player-stats button { display: grid; padding: 4px 6px; border-radius: 8px; background: rgba(255,255,255,.05); color: var(--muted); font-size: 10px; text-align: center; }
 .player-stats b { color: var(--ink); font-size: 14px; }
 .round-who { display: grid; gap: 2px; margin-top: 4px; }
 .round-who span { display: block; font-size: 11px; line-height: 1.35; overflow-wrap: anywhere; }
@@ -346,3 +346,8 @@ input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(241,199,11
 .who-enters.admin { color: var(--accent); }
 .override-btn { display: inline-flex; width: auto; min-height: 36px; margin-top: 4px; padding: 6px 10px; font-size: 12px; }
 
+
+.player-stats button { min-height: 66px; border: 1px solid transparent; cursor: pointer; font-family: inherit; line-height: 1.3; }
+.player-stats button:focus-visible, .player-games:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.player-stats button small { font-size: 9px; color: var(--gold); }
+.player-games[data-player-stat] { border: 0; background: transparent; padding: 4px; font-family: inherit; cursor: pointer; }
