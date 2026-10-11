@@ -351,3 +351,5 @@ input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(241,199,11
 .player-stats button:focus-visible, .player-games:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 .player-stats button small { font-size: 9px; color: var(--gold); }
 .player-games[data-player-stat] { border: 0; background: transparent; padding: 4px; font-family: inherit; cursor: pointer; }
+
+.stat-legend{margin:0 0 20px}.stat-legend summary{cursor:pointer;color:var(--gold,#efc96d);font-weight:700;padding:12px 0}.stat-legend summary:focus-visible{outline:2px solid currentColor;outline-offset:4px}.stat-legend .stat-order{margin:12px 0}
