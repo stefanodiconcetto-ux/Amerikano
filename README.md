@@ -1,4 +1,4 @@
-# Amerikano PWA
+# Amerikano
 
 Versione web 1.9.36 del segnapunti Amerikano, preparata per GitHub Pages.
 
@@ -6,7 +6,7 @@ Versione web 1.9.36 del segnapunti Amerikano, preparata per GitHub Pages.
 
 In Settings → Pages scegliere Deploy from a branch, branch `main`, cartella `/ (root)`, quindi Save.
 
-Indirizzo previsto dopo la pubblicazione: https://stefanodiconcetto-ux.github.io/Amerikano-pwa1/
+Indirizzo previsto dopo la pubblicazione: https://stefanodiconcetto-ux.github.io/Amerikano/
 
 Android: menu del browser → Installa app. iPhone/iPad: Safari → Condividi → Aggiungi alla schermata Home.
 
