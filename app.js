@@ -258,6 +258,7 @@ function historyView(){
 function resetDraft(){draft={contract:null,scores:{},infractions:{},discardTakes:{},double15:false,jokerClose:false,winner:null,cutJokers:0};}
 function alignGameTop(){requestAnimationFrame(()=>document.querySelector('.dashboard')?.scrollIntoView({block:'start',behavior:'auto'}));}
 function bind(){
+ document.querySelectorAll('[data-discard-take], [data-infraction], [data-collab-take], [data-collab-inf]').forEach(b=>b.onpointerdown=e=>{if(e.button===0&&e.isPrimary!==false)e.preventDefault();});
  document.querySelectorAll('[data-language]').forEach(select=>select.onchange=()=>{I18N.setLanguage(select.value);contracts=I18N.contracts();render();});
  document.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-mode]').forEach(x=>x.classList.toggle('active',x===b));document.querySelector('.mini-options')?.classList.toggle('hidden',b.dataset.mode!=='mini');});
  document.querySelectorAll('[data-seats]').forEach(b=>b.onclick=()=>document.querySelectorAll('[data-seats]').forEach(x=>x.classList.toggle('active',x===b)));
@@ -268,8 +269,8 @@ function bind(){
  document.querySelectorAll('[data-collab-contract]').forEach(b=>b.onclick=()=>chooseSharedContract(Number(b.dataset.collabContract)));
  document.querySelector('#collab-points')?.addEventListener('input',e=>{collabDraft.points=e.target.value;collabDirty=true;});
  document.querySelector('#collab-winner')?.addEventListener('click',()=>{collabDraft.winner=!collabDraft.winner;collabDirty=true;render();});
- document.querySelectorAll('[data-collab-inf]').forEach(b=>b.onclick=()=>{collabDraft.infractions=Math.max(0,collabDraft.infractions+Number(b.dataset.collabInf));collabDirty=true;render();});
- document.querySelectorAll('[data-collab-take]').forEach(b=>b.onclick=()=>{collabDraft.discardTakes=Math.max(0,Math.min(4,(Number(collabDraft.discardTakes)||0)+Number(b.dataset.collabTake)));collabDirty=true;render();});
+ document.querySelectorAll('[data-collab-inf]').forEach(b=>b.onclick=()=>{collabDraft.infractions=Math.max(0,collabDraft.infractions+Number(b.dataset.collabInf));collabDirty=true;b.parentElement.querySelector('strong').textContent=collabDraft.infractions;});
+ document.querySelectorAll('[data-collab-take]').forEach(b=>b.onclick=()=>{collabDraft.discardTakes=Math.max(0,Math.min(4,(Number(collabDraft.discardTakes)||0)+Number(b.dataset.collabTake)));collabDirty=true;b.parentElement.querySelector('strong').textContent=`${collabDraft.discardTakes}/4`;});
  document.querySelector('#collab-submit')?.addEventListener('click',submitSharedScore);
  document.querySelector('#collab-approve')?.addEventListener('click',approveSharedRound);
  document.querySelector('#collab-joker-close')?.addEventListener('change',async e=>{e.target.disabled=true;try{await ShareService.setJokerClose(shareAccess,e.target.checked);await refreshSharedGame();}catch{e.target.checked=!e.target.checked;toast(lt('Aggiornamento non riuscito','Update failed','Güncelleme başarısız'));}finally{e.target.disabled=false;}});
@@ -281,8 +282,8 @@ function bind(){
  document.querySelectorAll('[data-contract]').forEach(b=>b.onclick=()=>{draft={contract:Number(b.dataset.contract),scores:{},infractions:{},discardTakes:{},double15:Number(b.dataset.contract)===15,jokerClose:false,winner:null,cutJokers:Number(draft.cutJokers)||0};render();alignGameTop();});
  document.querySelectorAll('[data-score]').forEach(i=>i.oninput=()=>{draft.scores[i.dataset.score]=i.value;refreshTotalsOnly();});
  document.querySelectorAll('[data-winner]').forEach(b=>b.onclick=()=>{const i=Number(b.dataset.winner);draft.winner=draft.winner===i?null:i;if(draft.winner!==null)delete draft.scores[draft.winner];render();});
- document.querySelectorAll('[data-infraction]').forEach(b=>b.onclick=()=>{const i=b.dataset.infraction;draft.infractions[i]=Math.max(0,(Number(draft.infractions[i])||0)+Number(b.dataset.delta));render();});
- document.querySelectorAll('[data-discard-take]').forEach(b=>b.onclick=()=>{const i=b.dataset.discardTake;draft.discardTakes=draft.discardTakes||{};draft.discardTakes[i]=Math.max(0,Math.min(4,(Number(draft.discardTakes[i])||0)+Number(b.dataset.delta)));render();});
+ document.querySelectorAll('[data-infraction]').forEach(b=>b.onclick=()=>{const i=b.dataset.infraction;draft.infractions[i]=Math.max(0,(Number(draft.infractions[i])||0)+Number(b.dataset.delta));b.parentElement.querySelector('.infraction-count').innerHTML=`${draft.infractions[i]}<small style="display:block;color:var(--muted);font-size:9px">+${draft.infractions[i]*50}</small>`;refreshTotalsOnly();});
+ document.querySelectorAll('[data-discard-take]').forEach(b=>b.onclick=()=>{const i=b.dataset.discardTake;draft.discardTakes=draft.discardTakes||{};draft.discardTakes[i]=Math.max(0,Math.min(4,(Number(draft.discardTakes[i])||0)+Number(b.dataset.delta)));b.parentElement.querySelector('.infraction-count').innerHTML=`${draft.discardTakes[i]}/4<small style="display:block;color:var(--muted);font-size:9px">${lt('Prese','Pickups','Alımlar')}</small>`;});
  document.querySelectorAll('[data-action]').forEach(el=>{const a=el.dataset.action;if(a==='start')el.onclick=startGame;if(a==='save-round')el.onclick=saveRound;if(a==='change-contract'||a==='cancel-round')el.onclick=()=>{resetDraft();render();alignGameTop();};if(a==='double15')el.onchange=()=>{draft.double15=true;render();};if(a==='joker-close')el.onchange=()=>{draft.jokerClose=el.checked;render();};if(a==='undo')el.onclick=undo;if(a==='new-game')el.onclick=confirmNew;if(a==='menu')el.onclick=menu;});
 }
 let autoClaimTried=false;
