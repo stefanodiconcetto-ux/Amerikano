@@ -98,4 +98,3 @@
   window.ShareService = { listOpen, localBlocked: () => localBlocked, ping, deleteOwned, listCompleted, active, submitScoreAsOwner, approveAsOwner, configured, getConfig, saveConfig, newAccess, create, update, upsert, listOwnerGames, deleteGame, read, room, claim, chooseContract, submitScore, approve, setJokerClose, resetRound, releasePlayer, gameUrl, shareText };
 })();
 
-

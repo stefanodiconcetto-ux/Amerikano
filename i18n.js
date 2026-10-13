@@ -22,4 +22,3 @@
  document.documentElement.lang=language;
  window.I18N={t,contracts,setLanguage,get language(){return language;}};
 })();
-
