@@ -24,7 +24,7 @@ const mk=(id,players,n,date)=>({id,players,startedAt:date,endedAt:date,mode:'ful
  assert.equal(await page.locator('.player-card').count(),2);assert.ok(await page.getByRole('status').filter({hasText:'Aggiorno'}).isVisible());
  resolveCloud();await page.waitForFunction(()=>document.querySelectorAll('.player-card').length===4);
  const group=JSON.stringify(['Flavio','Stefano']);await page.locator('#stats-group').selectOption(group);assert.equal(await page.locator('.player-card').count(),2);
- await page.locator('#stats-duration').selectOption('5');assert.match(await page.locator('.player-card-head').first().innerText(),/1 partite/);
+ await page.locator('#stats-duration').selectOption('5');assert.match(await page.locator('.player-card-head').first().innerText(),/1 partita/);
  assert.equal(await page.locator('.stat-order').count(),0);
  await page.locator('#standings-help').click();assert.ok(await page.locator('.stat-order').isVisible());await page.locator('.modal-x').click();
  const keys=await page.locator('.player-card').first().locator('[data-player-stat]').evaluateAll(nodes=>nodes.map(n=>n.dataset.playerStat));
