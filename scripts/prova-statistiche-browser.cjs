@@ -7,7 +7,7 @@ const {chromium}=require('playwright');
 const root=fs.existsSync(path.resolve(__dirname,'../dist/index.html'))?path.resolve(__dirname,'../dist'):path.resolve(__dirname,'..');
 const mime={'.html':'text/html','.js':'text/javascript','.css':'text/css','.svg':'image/svg+xml','.png':'image/png','.webmanifest':'application/manifest+json','.pdf':'application/pdf'};
 const server=http.createServer((req,res)=>{const url=new URL(req.url,'http://localhost'),name=decodeURIComponent(url.pathname)==='/'?'index.html':decodeURIComponent(url.pathname).slice(1),file=path.resolve(root,name);if(!file.startsWith(root+path.sep)||!fs.existsSync(file)){res.writeHead(404);res.end();return;}res.writeHead(200,{'Content-Type':mime[path.extname(file)]||'application/octet-stream'});fs.createReadStream(file).pipe(res);});
-const mk=(id,players,n,date)=>({id,startedAt:date,endedAt:date,mode:'full',firstChooser:0,contracts:Array.from({length:n},(_,i)=>i===n-1?16:i+1),rounds:Array.from({length:n},(_,i)=>({contract:i===n-1?16:i+1,chooser:i%players.length,winner:i%players.length,results:players.map((_,j)=>({total:j===i%players.length?0:(j+1)*10,winner:j===i%players.length,infractions:0}))}))});
+const mk=(id,players,n,date)=>({id,players,startedAt:date,endedAt:date,mode:'full',firstChooser:0,contracts:Array.from({length:n},(_,i)=>i===n-1?16:i+1),rounds:Array.from({length:n},(_,i)=>({contract:i===n-1?16:i+1,chooser:i%players.length,winner:i%players.length,results:players.map((_,j)=>({total:j===i%players.length?0:(j+1)*10,winner:j===i%players.length,infractions:0}))}))});
 (async()=>{
  await new Promise(r=>server.listen(0,'127.0.0.1',r));const url=`http://127.0.0.1:${server.address().port}/`;
  const b=await chromium.launch({headless:true});let failed=[];
@@ -20,7 +20,7 @@ const mk=(id,players,n,date)=>({id,startedAt:date,endedAt:date,mode:'full',first
  await page.route('**/rest/v1/rpc/**',async route=>{if(route.request().url().endsWith('/list_amerikano_completed_games')){await gate;await route.fulfill({contentType:'application/json',body:JSON.stringify([{code:'QA0001',completed_at:remote.endedAt,state:{...remote,createdAt:remote.startedAt}}])});}else await route.fulfill({contentType:'application/json',body:'[]'});});
  await page.goto(url);
  assert.equal(await page.locator('#home-new-game').locator('..').locator('#home-statistics').count(),0);
- await page.locator('#home-statistics').click();fs.mkdirSync('qa-statistiche',{recursive:true});await page.screenshot({path:'qa-statistiche/apertura-statistiche.png',fullPage:true});console.log('STATS_DIAGNOSTIC',await page.evaluate(()=>({html:document.querySelector('#modal')?.innerText,records:JSON.parse(localStorage.getItem('amerikano-completed-games-v1')||'[]').map(g=>({keys:Object.keys(g),players:g.players})),games:statisticsGames().map(g=>({keys:Object.keys(g),players:g.players}))})));await page.locator('[data-stat-tab="players"]').click();
+ await page.locator('#home-statistics').click();fs.mkdirSync('qa-statistiche',{recursive:true});await page.screenshot({path:'qa-statistiche/apertura-statistiche.png',fullPage:true});await page.locator('[data-stat-tab="players"]').click();
  assert.equal(await page.locator('.player-card').count(),2);assert.ok(await page.getByRole('status').filter({hasText:'Aggiorno'}).isVisible());
  resolveCloud();await page.waitForFunction(()=>document.querySelectorAll('.player-card').length===4);
  const group=JSON.stringify(['Flavio','Stefano']);await page.locator('#stats-group').selectOption(group);assert.equal(await page.locator('.player-card').count(),2);
