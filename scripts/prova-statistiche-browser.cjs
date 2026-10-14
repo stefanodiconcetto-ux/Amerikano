@@ -12,7 +12,7 @@ const mk=(id,players,n,date)=>({id,startedAt:date,endedAt:date,mode:'full',first
  await new Promise(r=>server.listen(0,'127.0.0.1',r));const url=`http://127.0.0.1:${server.address().port}/`;
  const b=await chromium.launch({headless:true});let failed=[];
  try{
- const context=await b.newContext({viewport:{width:393,height:852},isMobile:true,hasTouch:true,serviceWorkers:'block'});const page=await context.newPage();page.on('pageerror',e=>failed.push(e.message));
+ const context=await b.newContext({viewport:{width:393,height:852},isMobile:true,hasTouch:true,serviceWorkers:'block'});const page=await context.newPage();page.on('pageerror',e=>{failed.push(e.message);console.error('APP_ERROR',e.stack)});
  const local=[mk('a',['Stefano','Flavio'],5,'2026-10-01'),mk('b',['Flavio','Stefano'],16,'2026-10-02')];
  const remote=mk('c',['Stefano','Sinem','Andrea'],10,'2026-10-03');
  await page.addInitScript(records=>{localStorage.setItem('amerikano-cloud-in-locale','1');localStorage.setItem('amerikano-completed-games-v1',JSON.stringify(records));},local);
@@ -20,7 +20,7 @@ const mk=(id,players,n,date)=>({id,startedAt:date,endedAt:date,mode:'full',first
  await page.route('**/rest/v1/rpc/**',async route=>{if(route.request().url().endsWith('/list_amerikano_completed_games')){await gate;await route.fulfill({contentType:'application/json',body:JSON.stringify([{code:'QA0001',completed_at:remote.endedAt,state:{...remote,createdAt:remote.startedAt}}])});}else await route.fulfill({contentType:'application/json',body:'[]'});});
  await page.goto(url);
  assert.equal(await page.locator('#home-new-game').locator('..').locator('#home-statistics').count(),0);
- await page.locator('#home-statistics').click();await page.locator('[data-stat-tab="players"]').click();
+ await page.locator('#home-statistics').click();fs.mkdirSync('qa-statistiche',{recursive:true});await page.screenshot({path:'qa-statistiche/apertura-statistiche.png',fullPage:true});console.log('STATS_DIAGNOSTIC',await page.evaluate(()=>({html:document.querySelector('#modal')?.innerText,records:JSON.parse(localStorage.getItem('amerikano-completed-games-v1')||'[]').length})));await page.locator('[data-stat-tab="players"]').click();
  assert.equal(await page.locator('.player-card').count(),2);assert.ok(await page.getByRole('status').filter({hasText:'Aggiorno'}).isVisible());
  resolveCloud();await page.waitForFunction(()=>document.querySelectorAll('.player-card').length===4);
  const group=JSON.stringify(['Flavio','Stefano']);await page.locator('#stats-group').selectOption(group);assert.equal(await page.locator('.player-card').count(),2);
