@@ -359,3 +359,7 @@ input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(241,199,11
 .player-stats button::after{content:"ⓘ";font-size:11px;opacity:.7;margin-top:4px}
 
 .stats-filters{display:grid;grid-template-columns:1fr;gap:10px;margin:16px 0}.stats-filters label{display:grid;gap:4px;font-size:14px}.stats-filters select{width:100%;min-width:0}.player-card>[data-player-breakdown]{margin-top:12px;width:100%}
+
+.owner-score-row>.owner-row-save,.owner-score-row>.owner-row-status{grid-column:1/-1}.owner-score-row .player-cell small{display:block;color:var(--muted)}
+
+.stat-tabs{flex-wrap:wrap}

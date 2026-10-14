@@ -1,0 +1,28 @@
+name: Collaudo web mobile
+on:
+  push:
+    branches: [main]
+    paths: ['app.js', 'styles.css', 'share.js', 'sw.js', 'scripts/prova-statistiche-browser.cjs', '.github/workflows/verify-web.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: collaudo-web-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  browser:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save --package-lock=false playwright@1.56.1
+      - run: npx playwright install --with-deps chromium
+      - run: node scripts/prova-statistiche-browser.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: collaudo-mobile
+          path: qa-statistiche/
+          if-no-files-found: ignore
