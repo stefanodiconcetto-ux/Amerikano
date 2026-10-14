@@ -5,4 +5,3 @@ window.SUPABASE_CONFIG = {
   siteUrl: 'https://amerikano-segnapunti.stefano-diconcetto.chatgpt.site/'
 };
 
-

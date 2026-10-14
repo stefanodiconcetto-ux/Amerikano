@@ -362,4 +362,13 @@ input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(241,199,11
 
 .owner-score-row>.owner-row-save,.owner-score-row>.owner-row-status{grid-column:1/-1}.owner-score-row .player-cell small{display:block;color:var(--muted)}
 
-.stat-tabs{flex-wrap:wrap}
+/* Statistiche, 14/10/2026 (Stefano: «il layout non è ok»): le tre schede stanno sempre su una riga, tutte con
+   l'icona sopra la scritta; prima la griglia a due colonne mandava «Contratti» da sola sotto. */
+.stat-tabs{grid-template-columns:repeat(3,minmax(0,1fr))}
+.stat-tab{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:6px 4px;font-size:13px;line-height:1.15;white-space:nowrap;min-width:0}
+.stat-tab-icon{font-size:18px;line-height:1}
+.home-btn{width:100%;margin-top:10px}
+.contract-tile{text-align:left;color:var(--ink);font:inherit;cursor:pointer}
+.contract-tile strong{font-size:14px;color:var(--accent)}
+.contract-tile span{font-size:12px;line-height:1.3;color:var(--muted)}
+.contract-tile .award-more{color:var(--accent);font-weight:800}
