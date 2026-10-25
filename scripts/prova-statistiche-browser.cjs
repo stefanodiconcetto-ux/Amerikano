@@ -20,8 +20,15 @@ const mk=(id,players,n,date)=>({id,players,startedAt:date,endedAt:date,mode:'ful
  await page.route('**/rest/v1/rpc/**',async route=>{if(route.request().url().endsWith('/list_amerikano_completed_games')){await gate;await route.fulfill({contentType:'application/json',body:JSON.stringify([{code:'QA0001',completed_at:remote.endedAt,state:{...remote,createdAt:remote.startedAt}}])});}else await route.fulfill({contentType:'application/json',body:'[]'});});
  await page.goto(url);
  assert.equal(await page.locator('#home-new-game').locator('..').locator('#home-statistics').count(),0);
+ assert.equal(await page.locator('[data-home-game]').count(),2,'la home include due partite precedenti');
+ await page.locator('[data-home-game="0"]').click();assert.ok(await page.locator('#history-back').isVisible());
+ await page.locator('.modal-x').click();assert.ok(await page.locator('#home-all-games').isVisible());
  await page.locator('#home-statistics').click();assert.equal(await page.locator('#stats-options').evaluate(el=>el.open),false,'sharing and filters start collapsed');assert.ok(await page.locator('[data-stat-tab="awards"]').isVisible(),'awards remain visible');fs.mkdirSync('qa-statistiche',{recursive:true});await page.screenshot({path:'qa-statistiche/apertura-statistiche.png',fullPage:true});await page.locator('[data-stat-tab="players"]').click();
  assert.equal(await page.locator('.player-card').count(),2);
+ assert.equal(await page.locator('.player-stat-section').count(),8,'quattro gruppi per giocatore');
+ assert.equal(await page.locator('.player-stat-section[open]').count(),0,'sezioni chiuse all avvio');
+ await page.locator('.player-card').first().locator('.player-stat-section').first().locator('summary').click();
+ assert.equal(await page.locator('.player-card').first().locator('.player-stat-section').first().evaluate(el=>el.open),true);
  assert.equal(await page.locator('.player-stats').first().evaluate(el=>getComputedStyle(el).gridTemplateColumns.split(' ').length),2,'players use 2-column mobile tiles');assert.ok(await page.getByRole('status').filter({hasText:'Aggiorno'}).isVisible());
  resolveCloud();await page.waitForFunction(()=>document.querySelectorAll('.player-card').length===4);
  await page.locator('#stats-options summary').click();assert.equal(await page.locator('#stats-options').evaluate(el=>el.open),true,'accordion can expand');assert.ok(await page.locator('#stats-share').isVisible(),'sharing button visible after expanding');
@@ -30,11 +37,11 @@ const mk=(id,players,n,date)=>({id,players,startedAt:date,endedAt:date,mode:'ful
  assert.equal(await page.locator('.stat-order').count(),0);
  await page.locator('#standings-help').click();assert.ok(await page.locator('.stat-order').isVisible());await page.locator('.modal-x').click();
  const keys=await page.locator('.player-card').first().locator('[data-player-stat]').evaluateAll(nodes=>nodes.map(n=>n.dataset.playerStat));
- for(const key of keys){await page.locator('.player-card').first().locator(`[data-player-stat="${key}"]`).click();assert.ok(await page.locator('.award-meaning').isVisible());assert.ok(await page.locator('.award-how').isVisible());await page.locator('.modal-x').click();assert.ok(await page.locator('[data-stat-pane="players"]').isVisible());}
- await page.locator('[data-player-breakdown]').first().click();assert.ok(await page.getByRole('heading',{name:'Rendimento per contratto'}).isVisible());assert.equal(await page.locator('.position-table tbody tr').count(),16);await page.locator('.modal-x').click();
+ for(const key of keys){const tile=page.locator('.player-card').first().locator(`[data-player-stat="${key}"]`);const group=tile.locator('xpath=ancestor::details[1]');if(!(await group.evaluate(el=>el.open)))await group.locator('summary').click();await tile.click();assert.ok(await page.locator('.award-meaning').isVisible());assert.ok(await page.locator('.award-how').isVisible());await page.locator('.modal-x').click();assert.ok(await page.locator('[data-stat-pane="players"]').isVisible());}
+ const breakdown=page.locator('[data-player-breakdown]').first();await breakdown.locator('xpath=ancestor::details[1]').locator('summary').click();await breakdown.click();assert.ok(await page.getByRole('heading',{name:'Rendimento per contratto'}).isVisible());assert.equal(await page.locator('.position-table tbody tr').count(),16);await page.locator('.modal-x').click();
  await page.locator('[data-stat-tab="contracts"]').click();await page.locator('[data-contract-detail="1"]').click();assert.ok(await page.locator('.position-table').isVisible());await page.locator('.modal-x').click();assert.ok(await page.locator('[data-stat-pane="contracts"]').isVisible());await page.locator('[data-stat-tab="players"]').click();
  await page.locator('#stats-duration').selectOption('all');await page.locator('#stats-order').selectOption('strength');
- assert.ok(await page.locator('[data-player-stat="strength"]').first().isVisible());
+ const strength=page.locator('[data-player-stat="strength"]').first();await strength.locator('xpath=ancestor::details[1]').locator('summary').click();assert.ok(await strength.isVisible());
  fs.mkdirSync('qa-statistiche',{recursive:true});await page.screenshot({path:'qa-statistiche/giocatori-mobile.png',fullPage:true});
  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth));
  await context.setOffline(true);await page.locator('.modal-x').click();await page.locator('#home-statistics').click();await page.locator('[data-stat-tab="players"]').click();assert.equal(await page.locator('.player-card').count(),2);
