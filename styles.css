@@ -612,3 +612,12 @@ input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(241,199,11
  .collab-card .my-score>.collab-infraction{grid-template-columns:minmax(0,1fr) 40px 42px 40px;gap:6px}
  .collab-card .my-score>.collab-infraction>button,.owner-score-row>.infraction>button{width:40px;height:42px}
 }
+
+/* Archivio compatto: l'ultima partita resta visibile, le altre a richiesta. */
+.recent-more{margin-top:10px;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.025);overflow:hidden}
+.recent-more>summary{display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer;list-style:none;padding:14px 16px;color:var(--ink);font-weight:750}
+.recent-more>summary::-webkit-details-marker{display:none}
+.recent-more>summary:after{content:"⌄";font-size:20px;line-height:1;transition:transform .2s}
+.recent-more[open]>summary:after{transform:rotate(180deg)}
+.recent-more-list{display:grid;gap:8px;padding:0 10px 10px}
+.recent-more .recent-game-item{margin:0}
