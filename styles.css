@@ -702,3 +702,154 @@ input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(241,199,11
  .collab-card .my-score{grid-template-columns:minmax(0,1fr) auto auto;column-gap:7px}
  .collab-card .my-score>.winner-btn{padding:8px 9px;font-size:11px}
 }
+
+
+/* Pannello amministratore v3: struttura compatta per mobile/desktop. */
+.score-list > .owner-score-row {
+  display:flex!important;
+  flex-direction:column!important;
+  gap:10px!important;
+  padding:14px!important;
+  min-width:0;
+}
+.owner-score-row > .owner-player-heading {
+  display:block;
+  width:100%;
+  min-width:0;
+}
+.owner-score-row .owner-player-heading .player-name {
+  font-size:clamp(17px,2.3vw,20px);
+  line-height:1.2;
+}
+.owner-score-row .owner-player-heading > small {
+  display:block;
+  margin:3px 0 0;
+  font-size:12px;
+  line-height:1.3;
+}
+.owner-score-row .owner-player-heading > button[data-override] {
+  margin-top:7px;
+  padding:6px 10px;
+  min-height:36px;
+}
+.owner-score-row > .owner-point-line {
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 86px auto;
+  align-items:center;
+  gap:9px;
+  width:100%;
+  min-width:0;
+}
+.owner-score-row .owner-point-title {
+  font-size:14px;
+  font-weight:750;
+  line-height:1.2;
+  min-width:0;
+}
+.owner-score-row .owner-point-line > input[data-owner-points] {
+  width:86px!important;
+  min-width:0!important;
+  max-width:86px!important;
+  height:44px!important;
+  min-height:44px!important;
+  max-height:44px!important;
+  margin:0!important;
+  padding:8px 9px!important;
+  box-sizing:border-box!important;
+  border-radius:10px;
+  text-align:right!important;
+  font-size:18px;
+}
+.owner-score-row .owner-point-line > .winner-btn {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:auto;
+  min-height:44px;
+  margin:0!important;
+  padding:8px 12px;
+  text-align:center;
+  line-height:1.1;
+  white-space:nowrap;
+  font-size:12px;
+}
+.owner-score-row > .owner-meta-line {
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  justify-content:space-between;
+  width:100%;
+  gap:5px 15px;
+  padding:2px 0 5px;
+  font-size:12px;
+}
+.owner-score-row .owner-meta-line > .round-total {
+  margin:0;
+  font-size:12px;
+}
+.owner-score-row .owner-meta-line > .no-open-label {
+  display:flex;
+  align-items:center;
+  width:auto;
+  margin:0;
+  gap:8px;
+  font-size:13px;
+  line-height:1.2;
+}
+.owner-score-row .owner-meta-line input[type="checkbox"] {
+  width:20px;
+  height:20px;
+  flex:0 0 20px;
+  margin:0;
+}
+.owner-score-row > .owner-counter-row.infraction {
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) 42px 50px 42px!important;
+  gap:7px!important;
+  align-items:center;
+  width:100%;
+  min-width:0;
+  min-height:48px;
+  padding:7px 0 0;
+  margin:0;
+  border-top:1px solid var(--line);
+}
+.owner-score-row .owner-counter-label {
+  min-width:0;
+  font-size:13px;
+  font-weight:750;
+  line-height:1.2;
+}
+.owner-score-row > .owner-counter-row > button {
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  min-width:0;
+  width:42px;
+  height:42px;
+  border-radius:10px;
+}
+.owner-score-row .owner-counter-row .infraction-count {
+  min-width:0;
+  font-size:17px;
+  line-height:1.2;
+  font-weight:800;
+  text-align:center;
+}
+.owner-score-row .owner-counter-row .infraction-count small { display:none; }
+.owner-score-row > .owner-row-save,
+.owner-score-row > .owner-row-status {
+  width:100%;
+  min-height:46px;
+  margin:0;
+  box-sizing:border-box;
+  font-size:15px;
+}
+@media(max-width:380px) {
+  .score-list > .owner-score-row { padding:11px!important; gap:8px!important; }
+  .owner-score-row > .owner-point-line { grid-template-columns:minmax(0,1fr) 76px auto;gap:6px; }
+  .owner-score-row .owner-point-line > input[data-owner-points] { width:76px!important;max-width:76px!important; }
+  .owner-score-row .owner-point-line > .winner-btn { padding:8px 9px;font-size:11px; }
+  .owner-score-row > .owner-counter-row.infraction { grid-template-columns:minmax(0,1fr) 38px 44px 38px!important;gap:5px!important; }
+  .owner-score-row > .owner-counter-row > button { width:38px;height:42px; }
+}
