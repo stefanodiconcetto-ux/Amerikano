@@ -76,7 +76,13 @@ const mk=(id,players,n,date)=>({id,players,startedAt:date,endedAt:date,mode:'ful
  const marker='/* cache-refresh-regression-check */';
  await offlinePage.evaluate(()=>localStorage.setItem('amerikano-test-saved-game','preserved'));
  cssOverride=fs.readFileSync(path.join(root,'styles.css'),'utf8')+'\\n'+marker;
+ assert.ok(await offlinePage.evaluate(()=>navigator.serviceWorker.controller!==null),'worker controls update probe');
+ await Promise.all([
+   offlinePage.waitForEvent('load',{timeout:15000}),
+   offlinePage.evaluate(()=>{void checkPwaAssets(true);})
+ ]);
  assert.ok((await offlinePage.evaluate(()=>fetch('./styles.css').then(r=>r.text()))).includes(marker),'network-first: ritorna CSS aggiornato anche con SW attivo');
+ assert.ok(await offlinePage.evaluate(()=>sessionStorage.getItem('amerikano-sw-last-reload')!==null),'nuova versione provoca ricarica automatica');
  await offlineContext.setOffline(true);
  assert.ok((await offlinePage.evaluate(()=>fetch('./styles.css').then(r=>r.text()))).includes(marker),'offline: ultimo CSS aggiornato conservato');
  assert.equal(await offlinePage.evaluate(()=>localStorage.getItem('amerikano-test-saved-game')),'preserved','gli aggiornamenti non cancellano partite o preferenze');
