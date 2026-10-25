@@ -641,3 +641,8 @@ input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(241,199,11
   .collab-card .my-score > label:first-child input[type="number"] { width: 100%; }
   .owner-score-row > input[data-owner-points] { width: min(100%, 340px); }
 }
+
+/* Punti: campo per tre cifre, allineato a destra nel pannello. */
+.collab-card .my-score > label:first-child{width:100%!important;align-self:stretch}
+.collab-card .my-score > label:first-child input[type="number"]{display:block;width:6.5ch!important;min-width:6.5ch!important;max-width:100%;margin-left:auto;text-align:right;box-sizing:content-box}
+.owner-score-row > input[data-owner-points]{width:6.5ch!important;min-width:6.5ch!important;max-width:100%;margin-left:auto;text-align:right;box-sizing:content-box}
