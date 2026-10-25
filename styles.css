@@ -372,3 +372,68 @@ input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(241,199,11
 .contract-tile strong{font-size:14px;color:var(--accent)}
 .contract-tile span{font-size:12px;line-height:1.3;color:var(--muted)}
 .contract-tile .award-more{color:var(--accent);font-weight:800}
+
+/* Hall of Fame / Giocatori: statistiche leggibili, senza quattro tessere minuscole. */
+.stat-pane[data-stat-pane="players"] .player-card {
+  margin-top: 14px;
+  padding: 16px;
+  border-radius: 18px;
+}
+.stat-pane[data-stat-pane="players"] .player-card-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 10px;
+  align-items: center;
+}
+.stat-pane[data-stat-pane="players"] .player-card-head strong {
+  font-size: 19px;
+  line-height: 1.25;
+}
+.stat-pane[data-stat-pane="players"] .player-games {
+  font-size: 13px;
+  padding: 8px 4px;
+  white-space: nowrap;
+}
+.stat-pane[data-stat-pane="players"] .player-stats {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+.stat-pane[data-stat-pane="players"] .player-stats button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-width: 0;
+  min-height: 94px;
+  padding: 12px 10px;
+  border-radius: 14px;
+  background: rgba(255,255,255,.055);
+  font-size: 13px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  text-align: center;
+}
+.stat-pane[data-stat-pane="players"] .player-stats b {
+  color: var(--ink);
+  font-size: 22px;
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
+}
+.stat-pane[data-stat-pane="players"] .player-stats button small {
+  font-size: 11px;
+  line-height: 1.25;
+}
+@media (max-width: 760px) {
+  .stat-pane[data-stat-pane="players"] .player-card { padding: 14px; }
+  .stat-pane[data-stat-pane="players"] .player-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .stat-pane[data-stat-pane="players"] .player-stats button {
+    min-height: 100px;
+    padding: 12px 9px;
+    font-size: 14px;
+  }
+}
