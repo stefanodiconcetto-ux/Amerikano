@@ -40,9 +40,9 @@
     const text = await response.text();
     return text ? JSON.parse(text) : null;
   }
-  const newAccess = () => ({ code: random(6), ownerToken: `${random(16)}${random(16)}` });
+  const newAccess = (test=false) => ({ code: random(6), ownerToken: `${random(16)}${random(16)}` });
   async function create(state) {
-    const {code,ownerToken}=newAccess();
+    const {code,ownerToken}=newAccess(Boolean(state?.testGame));
     await rpc('create_amerikano_game', { p_code: code, p_owner_token: ownerToken, p_state: state });
     return { code, ownerToken };
   }
@@ -58,6 +58,7 @@
     return rpc('upsert_amerikano_game', body);
   }
   const listCompleted = async () => { try { const rows = await rpc('list_amerikano_completed_games', {}, { retryNetwork: true }); return Array.isArray(rows) ? rows : null; } catch { return null; } };
+  const privateTestsSupported = async () => { try { return (await rpc('amerikano_private_tests_ready', {}))===true; } catch { return false; } };
   const ping = async () => { await rpc('get_active_amerikano_game', {}, { retryNetwork: true }); return true; };
   const deleteOwned = access => rpc('delete_amerikano_game_as_owner', { p_code: access.code, p_owner_token: access.ownerToken });
   const listOpen = async () => {
@@ -82,10 +83,10 @@
   const setJokerClose = (access, jokerClose) => rpc('set_amerikano_round_joker_close', { p_code: access.code, p_owner_token: access.ownerToken, p_joker_close: Boolean(jokerClose) });
   const resetRound = access => rpc('reset_amerikano_round', { p_code: access.code, p_owner_token: access.ownerToken });
   const releasePlayer = (access, playerIndex) => rpc('release_amerikano_player', { p_code: access.code, p_owner_token: access.ownerToken, p_player_index: playerIndex });
-  function gameUrl(code, spectator=false) {
+  function gameUrl(code, spectator=false, test=false) {
     const base = config.siteUrl || `${location.origin}${location.pathname}`;
     const url = new URL(base);
-    url.searchParams.set('game', code); url.searchParams.set(spectator ? 'view' : 'join', '1');
+    url.searchParams.set('game', code); if(test)url.searchParams.set('test','1');url.searchParams.set(spectator ? 'view' : 'join', '1');
     url.searchParams.set('sb', config.url); url.searchParams.set('key', config.anonKey);
     return url.toString();
   }
@@ -96,6 +97,6 @@
   }
   const submitScoreAsOwner = (access, playerIndex, points, infractions, discardTakes, winner) => rpc('submit_amerikano_score_as_owner', { p_code: access.code, p_owner_token: access.ownerToken, p_player_index: playerIndex, p_points: points, p_infractions: infractions, p_discard_takes: discardTakes, p_winner: winner });
   const approveAsOwner = access => rpc('approve_amerikano_round_as_owner', { p_code: access.code, p_owner_token: access.ownerToken });
-  window.ShareService = { listOpen, localBlocked: () => localBlocked, ping, deleteOwned, listCompleted, active, submitScoreAsOwner, approveAsOwner, configured, getConfig, saveConfig, newAccess, create, update, upsert, listOwnerGames, deleteGame, read, room, claim, chooseContract, submitScore, approve, setJokerClose, setCutJokers, resetRound, releasePlayer, gameUrl, shareText };
+  window.ShareService = { privateTestsSupported, listOpen, localBlocked: () => localBlocked, ping, deleteOwned, listCompleted, active, submitScoreAsOwner, approveAsOwner, configured, getConfig, saveConfig, newAccess, create, update, upsert, listOwnerGames, deleteGame, read, room, claim, chooseContract, submitScore, approve, setJokerClose, setCutJokers, resetRound, releasePlayer, gameUrl, shareText };
 })();
 
