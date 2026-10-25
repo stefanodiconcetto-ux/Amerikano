@@ -53,8 +53,11 @@ const mk=(id,players,n,date)=>({id,players,startedAt:date,endedAt:date,mode:'ful
  await labPage.addInitScript(()=>{localStorage.setItem('amerikano-cloud-in-locale','1');localStorage.setItem('amerikano-supabase-v1',JSON.stringify({url:location.origin,anonKey:'fixture-only-key'}));});
  await labPage.route('**/rest/v1/rpc/**',async route=>{const method=route.request().url().split('/').pop();if(method==='amerikano_private_tests_ready'){await route.fulfill({contentType:'application/json',body:'true'});return;}if(method==='get_amerikano_room'){await route.fulfill({contentType:'application/json',body:JSON.stringify({state:{players:['Test A','Test B'],rounds:[],contracts:[16],testGame:true,entryMode:'multi'},current_round:{},claimed_indices:[],entries:[]})});return;}await route.fulfill({contentType:'application/json',body:'[]'});});
  await labPage.goto(url);
- assert.ok(await labPage.locator('#home-test-game').isVisible(),'official home offers private test entry');
- await labPage.locator('#home-test-game').click();
+ assert.equal(await labPage.locator('#home-test-game').count(),0,'debug action is hidden from home');
+ await labPage.locator('[data-action="menu"]').click();
+ await labPage.locator('#open-tools').click();
+ assert.ok(await labPage.locator('#private-test-tools').isVisible(),'private testing is only in Tools');
+ await labPage.locator('#private-test-tools').click();
  await labPage.waitForURL('**/?test=1');
  assert.ok(await labPage.locator('.private-test-banner').isVisible(),'test mode marked');
  assert.equal(await labPage.locator('#home-statistics').count(),0,'no official stats within test mode');
