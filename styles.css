@@ -663,3 +663,42 @@ input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(241,199,11
   text-align:right!important;
   margin-left:auto;
 }
+
+/* Punti e vincitore costituiscono una sola decisione: layout compatto. */
+.collab-card .my-score{
+ display:grid!important;
+ grid-template-columns:minmax(0,1fr) auto auto;
+ column-gap:12px;
+ row-gap:12px;
+ align-items:center;
+}
+.collab-card .my-score>label:first-child{
+ grid-column:1 / 3;
+ grid-row:1;
+ display:flex!important;
+ flex-direction:row!important;
+ justify-content:space-between;
+ align-items:center;
+ gap:12px;
+ width:auto!important;
+ min-width:0;
+ margin:0;
+}
+.collab-card .my-score>label:first-child input[type="number"]{
+ margin-left:auto!important;
+ flex:0 0 86px;
+}
+.collab-card .my-score>.winner-btn{
+ grid-column:3;
+ grid-row:1;
+ margin:0;
+ align-self:center!important;
+ white-space:nowrap;
+}
+.collab-card .my-score>.collab-infraction,
+.collab-card .my-score>.switch-row,
+.collab-card .my-score>.primary{grid-column:1 / -1}
+@media(max-width:400px){
+ .collab-card .my-score{grid-template-columns:minmax(0,1fr) auto auto;column-gap:7px}
+ .collab-card .my-score>.winner-btn{padding:8px 9px;font-size:11px}
+}
