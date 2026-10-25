@@ -543,3 +543,39 @@ input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(241,199,11
 .private-test-join-row{display:flex;gap:8px;align-items:stretch}
 .private-test-join-row input{flex:1;min-width:0;font-size:16px;letter-spacing:.13em;text-transform:uppercase;padding:10px;border-radius:10px}
 .private-test-join-row button{flex:0 0 auto;min-height:44px;padding:8px 14px}
+
+/* Punteggi amministratore: due colonne fluide, ogni controllo occupa la propria cella. */
+.owner-score-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(96px, 130px);
+  gap: 12px;
+  align-items: start;
+  min-width: 0;
+}
+.owner-score-row > * { min-width: 0; max-width: 100%; }
+.owner-score-row > .player-cell { grid-column: 1 / -1; }
+.owner-score-row > input[data-owner-points] { grid-column: 1 / -1; width: 100%; box-sizing: border-box; }
+.owner-score-row > .infraction {
+  display: grid;
+  grid-template-columns: minmax(28px, 36px) minmax(0,1fr) minmax(28px,36px);
+  gap: 5px;
+  width: 100%;
+  align-items: center;
+  box-sizing: border-box;
+}
+.owner-score-row > .infraction > button { min-width: 0; width: 100%; }
+.owner-score-row .infraction-count { min-width: 0; overflow-wrap: anywhere; line-height: 1.2; }
+.owner-score-row .infraction-count small { display: block; font-size: 11px; }
+.owner-score-row > .owner-row-save,
+.owner-score-row > .owner-row-status { grid-column: 1 / -1; width: 100%; box-sizing: border-box; }
+.owner-score-row .owner-confirm-state { display: block; margin-top: 6px; }
+@media (max-width: 400px) {
+  .owner-score-row { grid-template-columns: 1fr; }
+  .owner-score-row > .infraction { grid-column: 1; }
+}
+
+/* Stato apertura contratto, indipendente dal punteggio. */
+.no-open-label{display:flex;align-items:center;gap:7px;margin-top:8px;font-size:12px;color:var(--muted);line-height:1.25;min-width:0}
+.no-open-label input{width:18px;height:18px;flex:none;accent-color:var(--accent)}
+.owner-score-row .no-open-label{max-width:100%;overflow-wrap:anywhere}
+.approval-list>div>span{min-width:0;overflow-wrap:anywhere}
