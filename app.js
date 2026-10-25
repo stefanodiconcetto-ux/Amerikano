@@ -931,13 +931,27 @@ function pwaWorkerChanged(){
  try{sessionStorage.setItem(key,String(Date.now()));}catch{}
  location.reload();
 }
+// Versioning effettivo: controlla il contenuto dei file serviti da Pages e fa
+// ricaricare la PWA solo quando cambia davvero, senza svuotare localStorage.
+let lastPwaAssetCheck=0;
+async function checkPwaAssets(force=false){
+ if(!navigator.serviceWorker?.controller||navigator.onLine===false||document.visibilityState==='hidden')return;
+ const now=Date.now();
+ if(!force&&now-lastPwaAssetCheck<300000)return;
+ lastPwaAssetCheck=now;
+ const files=['app.js','share.js','docs.js','i18n.js','styles.css','index.html'];
+ await Promise.allSettled(files.map(file=>fetch('./'+file+'?__amerikano_check='+now,{cache:'no-store'})));
+}
 if('serviceWorker' in navigator)window.addEventListener('load',()=>{
  const sw=navigator.serviceWorker,hadController=Boolean(sw.controller);
  sw.addEventListener('controllerchange',()=>{if(hadController)pwaWorkerChanged();});
- sw.addEventListener('message',event=>{if(event.data?.type==='AMERIKANO_UPDATE_READY'&&hadController)pwaWorkerChanged();});
+ sw.addEventListener('message',event=>{if((event.data?.type==='AMERIKANO_UPDATE_READY'||event.data?.type==='AMERIKANO_ASSET_UPDATED')&&hadController)pwaWorkerChanged();});
  sw.register('./sw.js',{updateViaCache:'none'}).then(reg=>{
    reg.update().catch(()=>{});
-   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')reg.update().catch(()=>{});});
+   checkPwaAssets().catch(()=>{});
+   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){reg.update().catch(()=>{});checkPwaAssets().catch(()=>{});}});
+   window.addEventListener('online',()=>checkPwaAssets(true).catch(()=>{}));
+   setInterval(()=>checkPwaAssets().catch(()=>{}),600000);
  }).catch(()=>{});
 });
 // La home mostra anche le partite del gruppo conservate nel cloud (senza aggiornamenti ciclici).
