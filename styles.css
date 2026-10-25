@@ -579,3 +579,36 @@ input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(241,199,11
 .no-open-label input{width:18px;height:18px;flex:none;accent-color:var(--accent)}
 .owner-score-row .no-open-label{max-width:100%;overflow-wrap:anywhere}
 .approval-list>div>span{min-width:0;overflow-wrap:anywhere}
+
+
+/* Layout v2: tutti i controlli di una mano hanno una riga autonoma. */
+.collab-layout,.collab-layout>*,.collab-card,.score-list {min-width:0}
+.collab-card .my-score{display:flex;flex-direction:column;gap:14px;padding:18px;margin:18px 0}
+.collab-card .my-score>label:first-child{display:flex;flex-direction:column;gap:8px;width:100%;min-width:0;font-weight:700}
+.collab-card .my-score input[type="number"]{display:block;width:100%;min-width:0;box-sizing:border-box;min-height:54px;font-size:20px;text-align:left}
+.collab-card .my-score>.winner-btn{align-self:flex-start;min-height:42px;margin:0;padding:9px 16px}
+.collab-card .my-score>.collab-infraction{display:grid;grid-template-columns:minmax(0,1fr) 44px 48px 44px;gap:10px;align-items:center;min-height:56px;padding:10px 0;border-top:1px solid var(--line)}
+.collab-card .my-score>.collab-infraction>span{min-width:0;font-weight:700}
+.collab-card .my-score>.collab-infraction>button{width:44px;height:44px;min-width:0}
+.collab-card .my-score>.collab-infraction>strong{text-align:center;font-size:18px;white-space:nowrap}
+.collab-card .my-score>.switch-row{margin:0;padding:12px;display:flex;justify-content:space-between;gap:16px;align-items:center}
+.collab-card .my-score>.primary{display:block;width:100%;min-height:54px;margin:0}
+.owner-score-row{display:flex!important;flex-direction:column;align-items:stretch;gap:12px;padding:18px;min-width:0}
+.owner-score-row>.player-cell{width:100%;min-width:0}
+.owner-score-row .player-name{font-size:19px;white-space:normal}
+.owner-score-row .player-cell>.winner-btn{display:inline-flex;margin:10px 0}
+.owner-score-row>.player-cell .round-total{margin:7px 0}
+.owner-score-row>input[data-owner-points]{display:block;width:100%;max-width:none;min-width:0;min-height:52px;box-sizing:border-box;text-align:left;padding:12px;font-size:20px}
+.owner-score-row>.infraction{display:grid;grid-template-columns:44px minmax(0,1fr) 44px;gap:12px;min-height:58px;align-items:center;border-top:1px solid var(--line);padding:12px 0 0;width:100%;box-sizing:border-box}
+.owner-score-row>.infraction>button{width:44px;min-width:0;height:44px}
+.owner-score-row .infraction-count{min-width:0;text-align:center;font-size:18px}
+.owner-score-row .infraction-count small{display:block;font-size:11px;line-height:1.4;color:var(--muted)}
+.owner-score-row>.owner-row-save,.owner-score-row>.owner-row-status{display:block;width:100%;min-height:50px;box-sizing:border-box}
+.owner-score-row .no-open-label{display:flex;gap:10px;align-items:center;line-height:1.4}
+.owner-score-row .no-open-label input{width:19px;height:19px;flex:none}
+@media(max-width:480px){
+ .collab-card .my-score{padding:13px}
+ .owner-score-row{padding:13px}
+ .collab-card .my-score>.collab-infraction{grid-template-columns:minmax(0,1fr) 40px 42px 40px;gap:6px}
+ .collab-card .my-score>.collab-infraction>button,.owner-score-row>.infraction>button{width:40px;height:42px}
+}
