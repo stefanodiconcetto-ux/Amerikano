@@ -77,7 +77,8 @@
     return { code, playerIndex, playerToken };
   }
   const chooseContract = (session, contract, double15=false) => rpc('choose_amerikano_contract', { p_code: session.code, p_player_token: session.playerToken, p_contract: contract, p_double15: double15 });
-  const submitScore = (session, points, infractions, discardTakes, winner) => rpc('submit_amerikano_score', { p_code: session.code, p_player_token: session.playerToken, p_points: points, p_infractions: infractions, p_discard_takes: discardTakes, p_winner: winner });
+  const chooseContractAsOwner = (access,contract) => rpc('choose_amerikano_contract_as_owner',{p_code:access.code,p_owner_token:access.ownerToken,p_contract:contract});
+  const submitScore = (session, points, infractions, discardTakes, winner, didNotOpen=false) => rpc('submit_amerikano_score', { p_code: session.code, p_player_token: session.playerToken, p_points: points, p_infractions: infractions, p_discard_takes: discardTakes, p_winner: winner, p_did_not_open: didNotOpen });
   const approve = session => rpc('approve_amerikano_round', { p_code: session.code, p_player_token: session.playerToken });
   const setCutJokers = (access,roundNo,count) => rpc('set_amerikano_round_cut_jokers', {p_code:access.code,p_owner_token:access.ownerToken,p_round_no:roundNo,p_cut_jokers:count});
   const setJokerClose = (access, jokerClose) => rpc('set_amerikano_round_joker_close', { p_code: access.code, p_owner_token: access.ownerToken, p_joker_close: Boolean(jokerClose) });
@@ -95,8 +96,8 @@
     if (navigator.share) return navigator.share({ title: 'Partita Amerikano', text }).catch(() => {});
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
   }
-  const submitScoreAsOwner = (access, playerIndex, points, infractions, discardTakes, winner) => rpc('submit_amerikano_score_as_owner', { p_code: access.code, p_owner_token: access.ownerToken, p_player_index: playerIndex, p_points: points, p_infractions: infractions, p_discard_takes: discardTakes, p_winner: winner });
+  const submitScoreAsOwner = (access, playerIndex, points, infractions, discardTakes, winner, didNotOpen=false) => rpc('submit_amerikano_score_as_owner', { p_code: access.code, p_owner_token: access.ownerToken, p_player_index: playerIndex, p_points: points, p_infractions: infractions, p_discard_takes: discardTakes, p_winner: winner, p_did_not_open: didNotOpen });
   const approveAsOwner = access => rpc('approve_amerikano_round_as_owner', { p_code: access.code, p_owner_token: access.ownerToken });
-  window.ShareService = { privateTestsSupported, listOpen, localBlocked: () => localBlocked, ping, deleteOwned, listCompleted, active, submitScoreAsOwner, approveAsOwner, configured, getConfig, saveConfig, newAccess, create, update, upsert, listOwnerGames, deleteGame, read, room, claim, chooseContract, submitScore, approve, setJokerClose, setCutJokers, resetRound, releasePlayer, gameUrl, shareText };
+  window.ShareService = { privateTestsSupported, listOpen, localBlocked: () => localBlocked, ping, deleteOwned, listCompleted, active, submitScoreAsOwner, approveAsOwner, configured, getConfig, saveConfig, newAccess, create, update, upsert, listOwnerGames, deleteGame, read, room, claim, chooseContract, chooseContractAsOwner, submitScore, approve, setJokerClose, setCutJokers, resetRound, releasePlayer, gameUrl, shareText };
 })();
 
