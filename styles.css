@@ -1004,3 +1004,172 @@ button.override-action.is-active:hover {
     padding:8px 11px;
   }
 }
+
+
+/* Statistiche v4: intestazione senza sovrapposizioni e contenuto leggibile su mobile. */
+.stats-modal {
+  position:relative;
+  width:min(680px,100%);
+  max-height:min(90dvh,900px);
+  overflow-y:auto;
+  overflow-x:hidden;
+  overscroll-behavior:contain;
+  scroll-padding-top:145px;
+}
+.stats-modal .stats-header {
+  position:sticky;
+  top:-22px;
+  z-index:6;
+  margin:-22px -22px 0;
+  padding:14px 22px 9px;
+  background:#173129;
+  border-bottom:1px solid var(--line);
+}
+.stats-modal .stats-heading {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  min-width:0;
+}
+.stats-modal .stats-heading > div{min-width:0}
+.stats-modal .stats-heading .eyebrow {
+  margin:0 0 3px;
+  font-size:10px;
+}
+.stats-modal .stats-heading h2 {
+  margin:0;
+  font-size:clamp(19px,3vw,24px);
+  line-height:1.2;
+}
+.stats-modal .stats-close {
+  flex:0 0 42px;
+  display:grid;
+  place-items:center;
+  width:42px;
+  height:42px;
+  padding:0;
+  border:1px solid var(--line);
+  border-radius:50%;
+  color:var(--ink);
+  background:#24443a;
+  font-size:25px;
+  line-height:1;
+  cursor:pointer;
+}
+.stats-modal .stats-close:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.stats-modal .stat-tabs{
+  top:65px;
+  z-index:5;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  width:100%;
+  min-width:0;
+  margin:0 0 12px!important;
+  padding:4px;
+  gap:4px;
+  border-radius:12px;
+  background:#173129;
+}
+.stats-modal .stat-tab{
+  min-width:0;
+  min-height:58px;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  gap:4px;
+  padding:7px 2px;
+  font-size:12px;
+  white-space:normal;
+  line-height:1.15;
+}
+.stats-modal .stat-tab-icon{font-size:18px;line-height:1}
+.stats-modal .player-score-summary{gap:6px;margin:8px 0 12px}
+.stats-modal .player-score-summary>div {
+  min-width:0;
+  min-height:70px;
+  padding:9px 4px;
+  gap:3px;
+}
+.stats-modal .player-score-summary strong{font-size:clamp(19px,5vw,25px)}
+.stats-modal .player-score-summary small{font-size:11px;line-height:1.2}
+.stats-modal .player-stat-sections{gap:8px}
+.stats-modal .player-stat-section{min-width:0}
+.stats-modal .player-stat-section summary{
+  position:relative;
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 18px;
+  grid-template-rows:auto auto;
+  column-gap:8px;
+  row-gap:6px;
+  align-items:start;
+  min-height:0;
+  padding:12px 13px;
+}
+.stats-modal .player-stat-section summary>span:first-child {
+  grid-column:1;
+  grid-row:1;
+  gap:3px;
+  min-width:0;
+}
+.stats-modal .player-stat-section summary strong {
+  font-size:15px;
+  line-height:1.2;
+  overflow-wrap:normal;
+}
+.stats-modal .player-stat-section summary small {
+  font-size:12px;
+  line-height:1.25;
+}
+.stats-modal .player-stat-section summary .stat-summary {
+  grid-column:1/-1;
+  grid-row:2;
+  max-width:none;
+  min-width:0;
+  width:100%;
+  font-size:12px;
+  line-height:1.3;
+  text-align:left;
+  white-space:normal;
+  padding-right:22px;
+}
+.stats-modal .player-stat-section summary .stat-summary::after {
+  position:absolute;
+  right:13px;
+  top:13px;
+  margin:0;
+  font-size:17px;
+  line-height:1.1;
+}
+.stats-modal .player-stat-section .player-stats{min-width:0}
+@media(max-width:600px){
+  .modal-backdrop:has(> .stats-modal){
+    display:flex;
+    align-items:stretch;
+    justify-content:center;
+    padding:max(5px,env(safe-area-inset-top)) 7px max(5px,env(safe-area-inset-bottom));
+  }
+  .modal.stats-modal{
+    width:100%;
+    height:100%;
+    max-height:100%;
+    padding:0 12px 15px;
+    border-radius:18px;
+    scroll-padding-top:126px;
+  }
+  .stats-modal .stats-header{
+    top:0;
+    margin:0 -12px 0;
+    padding:9px 12px 8px;
+  }
+  .stats-modal .stat-tabs{top:61px}
+  .stats-modal .stat-pane[data-stat-pane="players"] .player-card {
+    padding:10px;
+    margin-top:10px;
+    border-radius:14px;
+  }
+  .stats-modal .player-card-head strong{font-size:17px}
+  .stats-modal .player-score-summary>div{min-height:64px;padding:8px 2px}
+  .stats-modal .player-stat-section summary{padding:11px 12px}
+  .stats-modal .player-stat-section summary .stat-summary::after{right:12px;top:11px}
+}
