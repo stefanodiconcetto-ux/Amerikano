@@ -879,7 +879,39 @@ window.nativeBack=()=>dismissModal();
 function addModalCloseButton(){const modal=document.querySelector('#modal .modal');if(!modal||modal.querySelector('.modal-x'))return;modal.insertAdjacentHTML('afterbegin',`<button class="modal-x" aria-label="${lt('Chiudi','Close','Kapat')}">✕</button>`);modal.querySelector('.modal-x').onclick=dismissModal;}
 if(typeof MutationObserver==='function'&&document.body)new MutationObserver(addModalCloseButton).observe(document.body,{childList:true});
 if(typeof window.addEventListener==='function'&&typeof document.createElement==='function'&&document.body?.appendChild){const toTop=document.createElement('button');toTop.className='to-top';toTop.id='to-top';toTop.textContent='↑';toTop.setAttribute('aria-label',lt('Torna su','Back to top','Başa dön'));toTop.onclick=()=>window.scrollTo({top:0,behavior:'smooth'});document.body.appendChild(toTop);window.addEventListener('scroll',()=>toTop.classList.toggle('show',window.scrollY>window.innerHeight),{passive:true});}
-if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+// Rete-prima + updateViaCache:none: un nuovo rilascio sostituisce gli asset senza cancellare
+// partite, preferenze o sessioni locali. Non ricaricare mentre si stanno inserendo punteggi.
+function pwaSafeToReload(){
+ const focused=document.activeElement;
+ const editingField=focused&&['INPUT','TEXTAREA','SELECT'].includes(focused.tagName);
+ return !editingField&&!draft?.contract&&!state.currentRoundStartedAt&&!collabDirty&&!setupOpen;
+}
+function offerPwaUpdate(){
+ if(document.querySelector('#pwa-update-banner'))return;
+ const banner=document.createElement('div');banner.id='pwa-update-banner';banner.className='pwa-update-banner';
+ banner.setAttribute('role','status');
+ banner.innerHTML=`<span>${lt('Nuova versione pronta','New version ready','Yeni sürüm hazır')}</span><button type="button" id="pwa-update-now">${lt('Aggiorna','Update','Güncelle')}</button>`;
+ document.body.appendChild(banner);
+ banner.querySelector('button').onclick=()=>location.reload();
+}
+function pwaWorkerChanged(){
+ const key='amerikano-sw-last-reload';
+ let last=0;
+ try{last=Number(sessionStorage.getItem(key))||0;}catch{}
+ if(Date.now()-last<15000)return;
+ if(!pwaSafeToReload()){offerPwaUpdate();return;}
+ try{sessionStorage.setItem(key,String(Date.now()));}catch{}
+ location.reload();
+}
+if('serviceWorker' in navigator)window.addEventListener('load',()=>{
+ const sw=navigator.serviceWorker,hadController=Boolean(sw.controller);
+ sw.addEventListener('controllerchange',()=>{if(hadController)pwaWorkerChanged();});
+ sw.addEventListener('message',event=>{if(event.data?.type==='AMERIKANO_UPDATE_READY'&&hadController)pwaWorkerChanged();});
+ sw.register('./sw.js',{updateViaCache:'none'}).then(reg=>{
+   reg.update().catch(()=>{});
+   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')reg.update().catch(()=>{});});
+ }).catch(()=>{});
+});
 // La home mostra anche le partite del gruppo conservate nel cloud (senza aggiornamenti ciclici).
 function updateHomeRecentFromCloud(){if(sharedCode||spectator||!window.ShareService?.listCompleted||!window.ShareService?.configured?.())return;refreshCloudCompletedGames().then(changed=>{if(changed&&document.querySelector?.('#home-recent-games')&&!setupOpen)render();}).catch(()=>{});}
 if(sharedCode){render();refreshSharedGame();setInterval(refreshSharedGame,collaborative?2000:5000);}else{discardUnplayedAtStart();homeAtStart=completedAtStart();render();if(new URLSearchParams(location.search).get('stats')==='1')statisticsModal();}
