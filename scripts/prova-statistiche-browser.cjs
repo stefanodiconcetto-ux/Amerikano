@@ -20,9 +20,11 @@ const mk=(id,players,n,date)=>({id,players,startedAt:date,endedAt:date,mode:'ful
  await page.route('**/rest/v1/rpc/**',async route=>{if(route.request().url().endsWith('/list_amerikano_completed_games')){await gate;await route.fulfill({contentType:'application/json',body:JSON.stringify([{code:'QA0001',completed_at:remote.endedAt,state:{...remote,createdAt:remote.startedAt}}])});}else await route.fulfill({contentType:'application/json',body:'[]'});});
  await page.goto(url);
  assert.equal(await page.locator('#home-new-game').locator('..').locator('#home-statistics').count(),0);
- await page.locator('#home-statistics').click();fs.mkdirSync('qa-statistiche',{recursive:true});await page.screenshot({path:'qa-statistiche/apertura-statistiche.png',fullPage:true});await page.locator('[data-stat-tab="players"]').click();
- assert.equal(await page.locator('.player-card').count(),2);assert.ok(await page.getByRole('status').filter({hasText:'Aggiorno'}).isVisible());
+ await page.locator('#home-statistics').click();assert.equal(await page.locator('#stats-options').evaluate(el=>el.open),false,'sharing and filters start collapsed');assert.ok(await page.locator('[data-stat-tab="awards"]').isVisible(),'awards remain visible');fs.mkdirSync('qa-statistiche',{recursive:true});await page.screenshot({path:'qa-statistiche/apertura-statistiche.png',fullPage:true});await page.locator('[data-stat-tab="players"]').click();
+ assert.equal(await page.locator('.player-card').count(),2);
+ assert.equal(await page.locator('.player-stats').first().evaluate(el=>getComputedStyle(el).gridTemplateColumns.split(' ').length),2,'players use 2-column mobile tiles');assert.ok(await page.getByRole('status').filter({hasText:'Aggiorno'}).isVisible());
  resolveCloud();await page.waitForFunction(()=>document.querySelectorAll('.player-card').length===4);
+ await page.locator('#stats-options summary').click();assert.equal(await page.locator('#stats-options').evaluate(el=>el.open),true,'accordion can expand');assert.ok(await page.locator('#stats-share').isVisible(),'sharing button visible after expanding');
  const group=JSON.stringify(['Flavio','Stefano']);await page.locator('#stats-group').selectOption(group);assert.equal(await page.locator('.player-card').count(),2);
  await page.locator('#stats-duration').selectOption('5');assert.match(await page.locator('.player-card-head').first().innerText(),/1 partita/);
  assert.equal(await page.locator('.stat-order').count(),0);
