@@ -1,7 +1,7 @@
 // Cache offline: non identifica la release. Ogni navigazione online controlla la rete,
 // aggiorna il contenuto salvato e usa la cache solo se la rete non e' disponibile.
 const PREFIX = `amerikano:${self.registration.scope}:`;
-const CACHE = `${PREFIX}offline-network-first-v2`;
+const CACHE = `${PREFIX}offline-network-first-v3`;
 const ASSETS = ['./', './index.html', './styles.css', './i18n.js', './supabase-config.js',
  './share.js', './docs.js', './docs/Manuale-Amerikano-Segnapunti.pdf', './app.js',
  './manifest.webmanifest', './icon.svg', './icon-192.png', './icon-512.png'];
@@ -9,6 +9,10 @@ const CORE = ASSETS.filter(path => path !== './docs/Manuale-Amerikano-Segnapunti
 const SCOPE = new URL(self.registration.scope);
 const INDEX = new URL('./index.html', SCOPE).href;
 const ASSET_URLS = new Set(ASSETS.map(path => new URL(path, SCOPE).href));
+// Controllo versioni basato sul contenuto, non su un numero aggiornato manualmente.
+// Soltanto le richieste di verifica provocano il reload: i normali download non lo fanno.
+const LIVE_ASSETS = new Set(['./index.html','./app.js','./share.js','./docs.js','./i18n.js','./styles.css']
+ .map(path => new URL(path,SCOPE).href));
 
 function cacheKey(request) {
  const url = new URL(request.url);
@@ -25,7 +29,15 @@ async function fetchFresh(request, key) {
  const response = await fetch(url.href, {cache:'no-store', credentials:'same-origin'});
  if (response.ok && response.type !== 'opaque') {
    const cache = await caches.open(CACHE);
+   const check = LIVE_ASSETS.has(key) && new URL(request.url).searchParams.has('__amerikano_check');
+   const previous = check ? await cache.match(key) : null;
+   // Non considerare la prima installazione un aggiornamento: manca ancora un riferimento.
+   const changed = previous && (await previous.text()) !== (await response.clone().text());
    await cache.put(key, response.clone());
+   if (changed) {
+     const clients = await self.clients.matchAll({type:'window',includeUncontrolled:true});
+     for (const client of clients) client.postMessage({type:'AMERIKANO_ASSET_UPDATED'});
+   }
  }
  return response;
 }
