@@ -6,7 +6,8 @@ const path=require('node:path');
 const {chromium}=require('playwright');
 const root=fs.existsSync(path.resolve(__dirname,'../dist/index.html'))?path.resolve(__dirname,'../dist'):path.resolve(__dirname,'..');
 const mime={'.html':'text/html','.js':'text/javascript','.css':'text/css','.svg':'image/svg+xml','.png':'image/png','.webmanifest':'application/manifest+json','.pdf':'application/pdf'};
-const server=http.createServer((req,res)=>{const url=new URL(req.url,'http://localhost'),name=decodeURIComponent(url.pathname)==='/'?'index.html':decodeURIComponent(url.pathname).slice(1),file=path.resolve(root,name);if(!file.startsWith(root+path.sep)||!fs.existsSync(file)){res.writeHead(404);res.end();return;}res.writeHead(200,{'Content-Type':mime[path.extname(file)]||'application/octet-stream'});fs.createReadStream(file).pipe(res);});
+let cssOverride=null;
+const server=http.createServer((req,res)=>{const url=new URL(req.url,'http://localhost'),name=decodeURIComponent(url.pathname)==='/'?'index.html':decodeURIComponent(url.pathname).slice(1),file=path.resolve(root,name);if(!file.startsWith(root+path.sep)||!fs.existsSync(file)){res.writeHead(404);res.end();return;}if(name==='styles.css'&&cssOverride!==null){res.writeHead(200,{'Content-Type':'text/css'});res.end(cssOverride);return;}res.writeHead(200,{'Content-Type':mime[path.extname(file)]||'application/octet-stream'});fs.createReadStream(file).pipe(res);});
 const mk=(id,players,n,date)=>({id,players,startedAt:date,endedAt:date,mode:'full',firstChooser:0,contracts:Array.from({length:n},(_,i)=>i===n-1?16:i+1),rounds:Array.from({length:n},(_,i)=>({contract:i===n-1?16:i+1,chooser:i%players.length,winner:i%players.length,results:players.map((_,j)=>({total:j===i%players.length?0:(j+1)*10,winner:j===i%players.length,infractions:0}))}))});
 (async()=>{
  await new Promise(r=>server.listen(0,'127.0.0.1',r));const url=`http://127.0.0.1:${server.address().port}/`;
@@ -53,7 +54,16 @@ const mk=(id,players,n,date)=>({id,players,startedAt:date,endedAt:date,mode:'ful
  await ownerPage.goto(url+'?game=ABCDEF&join=1');await ownerPage.locator('[data-owner-points="2"]').waitFor();assert.ok(await ownerPage.locator('[data-owner-points="1"]').isDisabled());await ownerPage.locator('[data-owner-points="2"]').fill('32');await ownerPage.locator('[data-owner-counter="infractions"][data-owner-index="2"][data-delta="1"]').click();assert.equal(await ownerPage.evaluate(()=>document.activeElement.dataset.ownerPoints),'2');await ownerPage.locator('[data-owner-save-row="2"]').click();await ownerPage.waitForFunction(()=>document.querySelector('[data-owner-points="2"]').value==='32');assert.equal(ownerSubmissions,1);
  await ownerPage.locator('[data-override="1"]').click();assert.ok(await ownerPage.locator('[data-owner-points="1"]').isEnabled());await ownerPage.locator('[data-override="1"]').click();assert.ok(await ownerPage.locator('[data-owner-points="1"]').isDisabled());await ownerPage.locator('[data-shared-cut="1"]').click();await ownerPage.waitForFunction(()=>document.querySelector('#shared-cut-value').textContent==='1');await ownerPage.screenshot({path:'qa-statistiche/amministratore-mobile.png',fullPage:true});assert.ok(await ownerPage.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth));await ownerContext.close();
  // Real service-worker install and offline reload of the complete app shell.
- const offlineContext=await b.newContext({locale:'it-IT',viewport:{width:393,height:852}});const offlinePage=await offlineContext.newPage();await offlinePage.route('**/rest/v1/rpc/**',r=>r.fulfill({contentType:'application/json',body:'[]'}));await offlinePage.goto(url);await offlinePage.evaluate(()=>navigator.serviceWorker.ready);await offlinePage.reload();await offlineContext.setOffline(true);await offlinePage.reload();assert.ok(await offlinePage.locator('#home-new-game').isVisible());await offlineContext.close();
+ const offlineContext=await b.newContext({locale:'it-IT',viewport:{width:393,height:852}});const offlinePage=await offlineContext.newPage();await offlinePage.route('**/rest/v1/rpc/**',r=>r.fulfill({contentType:'application/json',body:'[]'}));await offlinePage.goto(url);await offlinePage.evaluate(()=>navigator.serviceWorker.ready);await offlinePage.reload();
+ // Nessuna versione manuale del cache key: il CSS aggiornato vince sulla copia offline.
+ const marker='/* cache-refresh-regression-check */';
+ await offlinePage.evaluate(()=>localStorage.setItem('amerikano-test-saved-game','preserved'));
+ cssOverride=fs.readFileSync(path.join(root,'styles.css'),'utf8')+'\\n'+marker;
+ assert.ok((await offlinePage.evaluate(()=>fetch('./styles.css').then(r=>r.text()))).includes(marker),'network-first: ritorna CSS aggiornato anche con SW attivo');
+ await offlineContext.setOffline(true);
+ assert.ok((await offlinePage.evaluate(()=>fetch('./styles.css').then(r=>r.text()))).includes(marker),'offline: ultimo CSS aggiornato conservato');
+ assert.equal(await offlinePage.evaluate(()=>localStorage.getItem('amerikano-test-saved-game')),'preserved','gli aggiornamenti non cancellano partite o preferenze');
+ await offlinePage.reload();await offlinePage.reload();assert.ok(await offlinePage.locator('#home-new-game').isVisible());await offlineContext.close();
  assert.deepEqual(failed,[]);console.log(`PASS: mobile, ${keys.length} popup, gruppi, durate, Elo, aggiornamento cloud e offline.`);
  }finally{await b.close();await new Promise(r=>server.close(r));}
 })().catch(e=>{console.error(e);process.exitCode=1;server.close();});
