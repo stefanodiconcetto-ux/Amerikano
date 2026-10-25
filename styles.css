@@ -646,3 +646,20 @@ input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(241,199,11
 .collab-card .my-score > label:first-child{width:100%!important;align-self:stretch}
 .collab-card .my-score > label:first-child input[type="number"]{display:block;width:6.5ch!important;min-width:6.5ch!important;max-width:100%;margin-left:auto;text-align:right;box-sizing:content-box}
 .owner-score-row > input[data-owner-points]{width:6.5ch!important;min-width:6.5ch!important;max-width:100%;margin-left:auto;text-align:right;box-sizing:content-box}
+
+/* Punti: tre cifre, allineati a destra, altezza normale. */
+.collab-card .my-score > label:first-child input[type="number"],
+.owner-score-row > input[data-owner-points]{
+  height:44px!important;
+  min-height:44px!important;
+  max-height:44px!important;
+  padding:7px 10px!important;
+  line-height:28px!important;
+  border-radius:10px;
+  box-sizing:border-box!important;
+  width:86px!important;
+  min-width:86px!important;
+  max-width:86px!important;
+  text-align:right!important;
+  margin-left:auto;
+}
