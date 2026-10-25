@@ -621,3 +621,16 @@ input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(241,199,11
 .recent-more[open]>summary:after{transform:rotate(180deg)}
 .recent-more-list{display:grid;gap:8px;padding:0 10px 10px}
 .recent-more .recent-game-item{margin:0}
+
+/* Header mobile: titolo sempre interamente visibile, anche in partita condivisa. */
+.topbar .brand{min-width:0;flex:1 1 auto}
+.topbar .brand>div:last-child{min-width:0}
+.topbar .brand-mark{flex:0 0 auto}
+.topbar .brand h1{max-width:100%;overflow-wrap:normal}
+@media(max-width:600px){
+ .topbar{min-width:0;gap:8px;flex-wrap:wrap}
+ .topbar .brand{width:100%;flex-basis:100%;gap:10px}
+ .topbar .brand h1{font-size:clamp(25px,8vw,38px);letter-spacing:-.035em;line-height:1.05;white-space:normal}
+ .topbar .header-actions{margin-left:auto;max-width:100%}
+ .topbar .eyebrow{font-size:11px;letter-spacing:.1em;overflow-wrap:anywhere}
+}
