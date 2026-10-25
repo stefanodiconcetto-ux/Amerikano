@@ -47,6 +47,23 @@ const mk=(id,players,n,date)=>({id,players,startedAt:date,endedAt:date,mode:'ful
  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth));
  await context.setOffline(true);await page.locator('.modal-x').click();await page.locator('#home-statistics').click();await page.locator('[data-stat-tab="players"]').click();assert.equal(await page.locator('.player-card').count(),2);
  await context.close();
+ // Test mode: no public listing, explicit invite code, and no official statistics.
+ const labContext=await b.newContext({locale:'it-IT',viewport:{width:393,height:852},isMobile:true,hasTouch:true,serviceWorkers:'block'});
+ const labPage=await labContext.newPage();labPage.on('pageerror',e=>failed.push(e.message));
+ await labPage.addInitScript(()=>{localStorage.setItem('amerikano-cloud-in-locale','1');localStorage.setItem('amerikano-supabase-v1',JSON.stringify({url:location.origin,anonKey:'fixture-only-key'}));});
+ await labPage.route('**/rest/v1/rpc/**',async route=>{const method=route.request().url().split('/').pop();if(method==='amerikano_private_tests_ready'){await route.fulfill({contentType:'application/json',body:'true'});return;}if(method==='get_amerikano_room'){await route.fulfill({contentType:'application/json',body:JSON.stringify({state:{players:['Test A','Test B'],rounds:[],contracts:[16],testGame:true,entryMode:'multi'},current_round:{},claimed_indices:[],entries:[]})});return;}await route.fulfill({contentType:'application/json',body:'[]'});});
+ await labPage.goto(url);
+ assert.ok(await labPage.locator('#home-test-game').isVisible(),'official home offers private test entry');
+ await labPage.locator('#home-test-game').click();
+ await labPage.waitForURL('**/?test=1');
+ assert.ok(await labPage.locator('.private-test-banner').isVisible(),'test mode marked');
+ assert.equal(await labPage.locator('#home-statistics').count(),0,'no official stats within test mode');
+ assert.ok(await labPage.locator('#test-join-code').isVisible(),'can join with the code');
+ await labPage.locator('#test-join-code').fill('ABC234');
+ await labPage.locator('#test-join-now').click();
+ await labPage.waitForURL('**/?test=1&game=ABC234');
+ assert.ok(await labPage.locator('.live-pill').getByText('TEST').isVisible(),'shared game explicitly TEST');
+ await labContext.close();
  const ownerContext=await b.newContext({locale:'it-IT',viewport:{width:393,height:852},isMobile:true,hasTouch:true,serviceWorkers:'block'});const ownerPage=await ownerContext.newPage();ownerPage.on('pageerror',e=>failed.push(e.message));
  await ownerPage.addInitScript(()=>{localStorage.setItem('amerikano-cloud-in-locale','1');localStorage.setItem('amerikano-supabase-v1',JSON.stringify({url:location.origin,anonKey:'fixture-only-key'}));localStorage.setItem('amerikano-share-v1',JSON.stringify({code:'ABCDEF',ownerToken:'fixture-owner-token'}));localStorage.setItem('amerikano-player-ABCDEF',JSON.stringify({code:'ABCDEF',playerIndex:0,playerToken:'fixture-player-token'}));});
  const ownerRoom={state:{players:['A','B','C'],rounds:[],contracts:[1,16],firstChooser:0,entryMode:'multi'},current_round:{contract:1,roundNo:1,starterIndex:0,cutJokers:0},claimed_indices:[0,1],entries:[]};let ownerSubmissions=0;
