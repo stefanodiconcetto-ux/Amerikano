@@ -1,5 +1,5 @@
 const PREFIX = `amerikano:${self.registration.scope}:`;
-const CACHE = `${PREFIX}1.9.41-pages-e7de884ee320`;
+const CACHE = `${PREFIX}1.9.41-site-casuale-20261025-v1`;
 const ASSETS = ['./', './index.html', './styles.css', './i18n.js', './supabase-config.js', './share.js', './docs.js', './docs/Manuale-Amerikano-Segnapunti.pdf', './app.js', './manifest.webmanifest', './icon.svg', './icon-192.png', './icon-512.png'];
 const assetURLs = new Set(ASSETS.map(path => new URL(path, self.registration.scope).href));
 self.addEventListener('install', event => {
