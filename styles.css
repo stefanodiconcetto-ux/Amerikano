@@ -634,3 +634,10 @@ input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(241,199,11
  .topbar .header-actions{margin-left:auto;max-width:100%}
  .topbar .eyebrow{font-size:11px;letter-spacing:.1em;overflow-wrap:anywhere}
 }
+
+/* Campo punti proporzionato allo schermo: compatto su desktop, largo su mobile. */
+@media (min-width: 761px) {
+  .collab-card .my-score > label:first-child { width: min(100%, 340px); }
+  .collab-card .my-score > label:first-child input[type="number"] { width: 100%; }
+  .owner-score-row > input[data-owner-points] { width: min(100%, 340px); }
+}
