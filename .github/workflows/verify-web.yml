@@ -1,8 +1,7 @@
 name: Collaudo web mobile
 on:
-  push:
-    branches: [main]
-    paths: ['app.js', 'styles.css', 'share.js', 'sw.js', 'scripts/prova-statistiche-browser.cjs', '.github/workflows/verify-web.yml']
+  # Sito web: i test automatici su push sono sospesi per evitare utilizzo di Actions.
+  # Il test resta disponibile solo su avvio manuale esplicitamente autorizzato.
   workflow_dispatch:
 permissions:
   contents: read
