@@ -441,13 +441,79 @@ function rankingView(){
 }
 function confettiView(){return `<div class="gold-confetti" aria-hidden="true">${Array.from({length:40},(_,i)=>`<i style="--x:${(i*37)%101}%;--y:${12+(i*29)%78}%;--delay:-${(i%13)*.19}s;--duration:${2.2+(i%5)*.25}s;--drift:${-34+(i%7)*12}px;--size:${7+(i%4)*2}px"></i>`).join('')}</div>`;}
 function finalView(){archiveCompletedGame();const r=totals(),winner=r[0];return `<div class="winner-hero">${confettiView()}<div class="winner-kicker">THE WINNER IS 🏆😁</div>${avatar(winner.name,winner.i,'winner-avatar')}<h2>${esc(winner.name)}</h2><strong>${winner.total} ${Number(winner.total)===1?lt('Punto','Point','Puan'):t('points')}</strong></div><div class="ranking">${r.map((x,pos)=>`<div class="rank-row ${pos===0?'leader':''}"><div class="rank-num">${pos+1}</div>${avatar(x.name,x.i,'small')}<div><strong>${esc(x.name)}</strong>${pos===0?`<div class="projected">${isFemale(x.name)?lt('Vincitrice','Winner','Kazanan'):t('winnerLabel')}</div>`:''}</div><div class="rank-score">${x.total}</div></div>`).join('')}</div>${undoButton()}${sharedCode?'':`<button class="secondary home-btn" id="go-home">🏠 ${lt('Pagina iniziale','Home','Ana sayfa')}</button>`}`;}
+function canEditSavedRounds(){
+ return collaborative && !spectator && shareAccess?.code===sharedCode && Boolean(shareAccess?.ownerToken)
+   && !gameFinished() && !state.closedEarlyAt && Boolean(window.ShareService?.configured?.())
+   && typeof window.ShareService?.editSavedRound==='function';
+}
+async function editSavedRound(index){
+ if(!canEditSavedRounds()||!Number.isInteger(index)||index<0||index>=state.rounds.length)return;
+ const access={code:shareAccess.code,ownerToken:shareAccess.ownerToken};
+ let remote;
+ try{remote=await ShareService.read(access.code);}
+ catch{toast(lt('Cloud non raggiungibile: nessuna modifica effettuata.','Cloud unavailable: no changes made.','Buluta ulaşılamıyor: değişiklik yapılmadı.'));return;}
+ const game=remote?.state,round=game?.rounds?.[index];
+ if(!game||!round||game.createdAt!==state.createdAt||stableJson(game.players)!==stableJson(state.players)){
+  toast(lt('Partita cambiata: ricarica e riprova.','Game changed: refresh and retry.','Oyun değişti: yenileyip tekrar deneyin.'));return;
+ }
+ if(game.closedEarlyAt||(game.contracts?.length&&game.rounds.length>=game.contracts.length)){
+  toast(lt('Le partite concluse sono in sola lettura.','Completed games are read-only.','Biten oyunlar salt okunurdur.'));return;
+ }
+ const factor=Number(round.scoreMultiplier)||(round.contract===15||round.jokerClose?2:1);
+ const values=round.results.map((r,i)=>{
+  const infractions=Number(r.infractions)||0;
+  const points=Number.isFinite(Number(r.points))?Number(r.points):Math.max(0,Math.round(((Number(r.total)||0)-infractions*50)/factor));
+  return {points,infractions,discardTakes:Number(r.discardTakes)||0,didNotOpen:r.didNotOpen===true};
+ });
+ closeModal();
+ document.body.insertAdjacentHTML('beforeend',`<div class="modal-backdrop" id="modal"><div class="modal saved-round-editor" id="saved-round-editor"><p class="eyebrow">${lt('Solo amministratore','Administrator only','Yalnızca yönetici')}</p><h2>${lt('Modifica mano','Edit round','Eli düzenle')} ${index+1} · ${round.contract}. ${esc(contracts[round.contract-1]?.[1]||'')}</h2><p class="subtle">${lt('Correggi i valori e salva nel cloud. Il vincitore non può essere modificato.','Correct values and save to the cloud. The winner cannot be changed.','Değerleri düzeltip buluta kaydet. Kazanan değiştirilemez.')}</p><div class="saved-round-editor-list">${game.players.map((name,i)=>{const v=values[i],winner=round.results[i]?.winner===true;return `<fieldset class="saved-round-editor-player"><legend>${esc(name)}${winner?` · ${lt('Vincitore','Winner','Kazanan')}`:''}</legend><div class="saved-round-editor-fields"><label>${lt('Punti','Points','Puan')}<input data-edit-points="${i}" type="number" inputmode="numeric" min="0" max="9999" step="1" value="${v.points}" ${winner?'disabled':''}></label><label>${lt('Penalità','Penalties','Cezalar')}<input data-edit-infractions="${i}" type="number" inputmode="numeric" min="0" max="20" step="1" value="${v.infractions}"></label><label>${lt('Prese','Pickups','Alımlar')}<input data-edit-takes="${i}" type="number" inputmode="numeric" min="0" max="4" step="1" value="${v.discardTakes}"></label><label class="saved-round-editor-check"><input data-edit-no-open="${i}" type="checkbox" ${v.didNotOpen?'checked':''} ${winner?'disabled':''}> ${lt('Non ha aperto','Did not open','Açamadı')}</label></div></fieldset>`;}).join('')}</div><div class="actions"><button class="secondary" id="modal-cancel">${lt('Annulla','Cancel','İptal')}</button><button class="primary" id="save-saved-round">${lt('Salva modifiche','Save changes','Değişiklikleri kaydet')}</button></div></div></div>`);
+ document.querySelector('#modal-cancel').onclick=closeModal;
+ document.querySelector('#save-saved-round').onclick=async()=>{
+  if(!canEditSavedRounds()){closeModal();return;}
+  const button=document.querySelector('#save-saved-round');
+  const edited=[];
+  for(let i=0;i<game.players.length;i++){
+   const winner=round.results[i]?.winner===true;
+   const get=(name)=>String(document.querySelector(`[data-edit-${name}="${i}"]`)?.value??'');
+   const raw=[winner?'0':get('points'),get('infractions'),get('takes')];
+   const nums=raw.map(Number),max=[9999,20,4];
+   if(raw.some((s,j)=>!/^\d{1,4}$/.test(s)||!Number.isInteger(nums[j])||nums[j]<0||nums[j]>max[j])){
+    toast(lt('Controlla punti, penalità e prese: servono numeri interi validi.','Check points, penalties and pickups: use valid whole numbers.','Puanları, cezaları ve alımları kontrol edin.'));return;
+   }
+   edited.push({points:nums[0],infractions:nums[1],discardTakes:nums[2],didNotOpen:!winner&&document.querySelector(`[data-edit-no-open="${i}"]`)?.checked===true});
+  }
+  if(stableJson(edited)===stableJson(values)){toast(lt('Nessuna modifica da salvare.','No changes to save.','Kaydedilecek değişiklik yok.'));return;}
+  button.disabled=true;
+  try{
+   const result=await ShareService.editSavedRound(access,index,round,edited);
+   if(result?.ok!==true){
+    const msg=result?.reason==='round_changed'
+     ?lt('Questa mano è stata modificata da un altro telefono. Chiudi, riapri e riprova.','This round changed on another phone. Reopen and try again.','Bu el başka telefonda değiştirildi.')
+     :result?.reason==='not_authorized'
+     ?lt('Solo l’amministratore può modificare le mani.','Only the administrator can edit rounds.','Yalnızca yönetici elleri düzenleyebilir.')
+     :lt('Modifica non salvata: aggiorna la partita e riprova.','Changes not saved: refresh the game and retry.','Değişiklikler kaydedilemedi.');
+    toast(msg);return;
+   }
+   const checked=await ShareService.read(access.code);
+   if(!checked?.state||stableJson(checked.state.rounds?.[index]?.results)!==stableJson(result.results)){
+    toast(lt('Salvato, ma la verifica del cloud non è riuscita: aggiorna la partita.','Saved, but cloud verification failed: refresh the game.','Kaydedildi ancak bulut doğrulanamadı.'));return;
+   }
+   closeModal();
+   await refreshSharedGame();
+   toast(lt('Mano corretta e verificata nel cloud.','Round edited and verified in the cloud.','El bulutta düzenlendi ve doğrulandı.'));
+  }catch{
+   toast(lt('Rete non disponibile: nessun salvataggio confermato.','Network unavailable: save not confirmed.','Ağ kullanılamıyor: kayıt doğrulanmadı.'));
+  }finally{if(button.isConnected)button.disabled=false;}
+ };
+}
 function historyView(){
  if(!state.rounds.length)return '';
- return `<section class="panel history"><div class="section-title"><h2>${t('gamesPlayed')}</h2></div><div class="history-legend">${state.players.map((n,i)=>`<span><b>G${i+1}</b>${esc(n)}</span>`).join('')}</div><div class="history-wrap" style="--players:${state.players.length}"><div class="history-row header"><div>${lt('Mano','Round','El')}</div>${state.players.map((n,i)=>`<div class="history-score history-player"><span class="player-full">${esc(n)}</span><span class="player-short" ${tip(esc(n))}>G${i+1}</span></div>`).join('')}</div>${state.rounds.map(r=>`<div class="history-row"><div class="history-contract"><strong><span class="contract-number">${r.contract}</span><span class="contract-title">. ${esc(contracts[r.contract-1][1])}</span></strong><small class="round-who"><span ${tip(lt('Sceglie la mano','Chooses the round','Eli seçer'))}>🎴 ${esc(state.players[r.chooser]||'—')}</span><span ${tip(lt('Taglia il mazzo','Cuts the deck','Desteyi keser'))}>✂️ ${esc(state.players[r.cutter]||'—')}</span>${r.cutJokers?`<span ${tip(lt('Jolly trovati al taglio','Jokers found on the cut','Kesimde bulunan joker'))}>🃏 ${r.cutJokers}</span>`:''}</small></div>${r.results.map((x,xi)=>`<div class="history-score">${x.winner?`<span class="winner-mark" ${tip(`${winnerWord(state.players[xi])} ${lt('della mano','of the round','(el)')}`)}>★</span>`:''}<span>${x.total}</span>${x.didNotOpen===true?`<span class="history-no-open" ${tip(lt('Non ha aperto','Did not open','Açamadı'))}>${lt('Non aperto','Did not open','Açamadı')}</span>`:''}${x.infractions?`<span class="penalty-dot" ${tip(lt('Penalità: 50 punti ciascuna','Penalties: 50 points each','Cezalar: her biri 50 puan'))}>${x.infractions}×50</span>`:''}</div>`).join('')}</div>`).join('')}</div>${state.rounds.length<totalRounds()?undoButton():''}</section>`;
+ return `<section class="panel history"><div class="section-title"><h2>${t('gamesPlayed')}</h2></div><div class="history-legend">${state.players.map((n,i)=>`<span><b>G${i+1}</b>${esc(n)}</span>`).join('')}</div><div class="history-wrap" style="--players:${state.players.length}"><div class="history-row header"><div>${lt('Mano','Round','El')}</div>${state.players.map((n,i)=>`<div class="history-score history-player"><span class="player-full">${esc(n)}</span><span class="player-short" ${tip(esc(n))}>G${i+1}</span></div>`).join('')}</div>${state.rounds.map((r,ri)=>`<div class="history-row"><div class="history-contract"><strong><span class="contract-number">${r.contract}</span><span class="contract-title">. ${esc(contracts[r.contract-1][1])}</span></strong><small class="round-who"><span ${tip(lt('Sceglie la mano','Chooses the round','Eli seçer'))}>🎴 ${esc(state.players[r.chooser]||'—')}</span><span ${tip(lt('Taglia il mazzo','Cuts the deck','Desteyi keser'))}>✂️ ${esc(state.players[r.cutter]||'—')}</span>${r.cutJokers?`<span ${tip(lt('Jolly trovati al taglio','Jokers found on the cut','Kesimde bulunan joker'))}>🃏 ${r.cutJokers}</span>`:''}</small>${canEditSavedRounds()?`<button type="button" class="secondary edit-saved-round" data-edit-saved-round="${ri}">${lt('Modifica','Edit','Düzenle')}</button>`:''}</div>${r.results.map((x,xi)=>`<div class="history-score">${x.winner?`<span class="winner-mark" ${tip(`${winnerWord(state.players[xi])} ${lt('della mano','of the round','(el)')}`)}>★</span>`:''}<span>${x.total}</span>${x.didNotOpen===true?`<span class="history-no-open" ${tip(lt('Non ha aperto','Did not open','Açamadı'))}>${lt('Non aperto','Did not open','Açamadı')}</span>`:''}${x.infractions?`<span class="penalty-dot" ${tip(lt('Penalità: 50 punti ciascuna','Penalties: 50 points each','Cezalar: her biri 50 puan'))}>${x.infractions}×50</span>`:''}</div>`).join('')}</div>`).join('')}</div>${state.rounds.length<totalRounds()?undoButton():''}</section>`;
 }
 function resetDraft(){draft={contract:null,scores:{},infractions:{},discardTakes:{},double15:false,jokerClose:false,winner:null,cutJokers:0,didNotOpen:{}};}
 function alignGameTop(){requestAnimationFrame(()=>document.querySelector('.dashboard')?.scrollIntoView({block:'start',behavior:'auto'}));}
 function bind(){bindOwnerBoard();
+ document.querySelectorAll('[data-edit-saved-round]').forEach(b=>b.onclick=()=>editSavedRound(Number(b.dataset.editSavedRound)));
  document.querySelectorAll('[data-no-open-help]').forEach(b=>b.onclick=()=>toast(noOpenExplanation()));
  document.querySelectorAll('[data-discard-take], [data-infraction], [data-collab-take], [data-collab-inf]').forEach(b=>b.onpointerdown=e=>{if(e.button===0&&e.isPrimary!==false)e.preventDefault();});
  document.querySelectorAll('[data-language]').forEach(select=>select.onchange=()=>{I18N.setLanguage(select.value);contracts=I18N.contracts();render();});
@@ -1008,7 +1074,7 @@ if(typeof window.addEventListener==='function'&&typeof document.createElement===
 function pwaSafeToReload(){
  const focused=document.activeElement;
  const editingField=focused&&['INPUT','TEXTAREA','SELECT'].includes(focused.tagName);
- return !editingField&&!draft?.contract&&!state.currentRoundStartedAt&&!collabDirty&&!setupOpen;
+ return !document.querySelector('#saved-round-editor')&&!editingField&&!draft?.contract&&!state.currentRoundStartedAt&&!collabDirty&&!setupOpen;
 }
 function offerPwaUpdate(){
  if(document.querySelector('#pwa-update-banner'))return;
