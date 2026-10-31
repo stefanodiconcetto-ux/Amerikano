@@ -309,13 +309,28 @@ function sharedView(){
  return collaborativeView();
 }
 function claimPlayerView(){const claimed=new Set(collabRoom?.claimed_indices||[]),owner=shareAccess?.code===sharedCode;return `<section class="panel collab-card"><p class="eyebrow">${lt('Entra nella partita','Join the game','Oyuna katıl')}</p><h2>${lt('Chi sei?','Who are you?','Kimsiniz?')}</h2><p class="subtle">${lt('Scegli il tuo nome. Questo telefono potrà inserire solo il tuo punteggio.','Choose your name. This phone can enter only your score.','Adınızı seçin. Bu telefon yalnızca sizin puanınızı girebilir.')}</p><div class="claim-list">${state.players.map((name,i)=>claimed.has(i)?`<div class="claimed-player">${avatar(name,i,'small')}<strong>${esc(name)}</strong><span>${lt('Già collegato','Already connected','Zaten bağlı')}</span>${owner?`<button data-release="${i}">${lt('Libera','Release','Serbest bırak')}</button>`:''}</div>`:`<button class="mode-btn" data-claim="${i}">${avatar(name,i,'small')}<strong>${esc(name)}</strong><span>${lt('Usa questo profilo','Use this profile','Bu profili kullan')}</span></button>`).join('')}</div></section>`;}
+function sharedFinishButton(){
+ if(!collaborative||spectator||!shareAccess?.ownerToken||shareAccess.code!==sharedCode||!state.rounds?.length||gameFinished())return '';
+ const busy=Boolean(collabRoom?.current_round?.contract);
+ return `<section class="panel shared-finish"><p class="eyebrow">${lt('Solo amministratore','Administrator only','Yalnızca yönetici')}</p><button type="button" class="secondary" id="finish-shared-now" ${busy?'disabled':''}>🏁 ${lt('Termina e salva la partita','Finish and save game','Oyunu bitir ve kaydet')}</button>${busy?`<p class="subtle">${lt('Concludi prima la mano in corso.','Finish the current round first.','Önce devam eden eli bitir.')}</p>`:''}</section>`;
+}
+function confirmSharedFinish(){
+ if(!collaborative||spectator||!shareAccess?.ownerToken||shareAccess.code!==sharedCode||!state.rounds?.length||gameFinished())return;
+ const played=state.rounds.length,planned=totalRounds();
+ showModal(
+  lt('Terminare e salvare la partita?','Finish and save this game?','Oyunu bitirip kaydetmek ister misin?'),
+  lt(`Avete completato ${played} mani su ${planned}. La classifica diventerà definitiva e la partita resterà nell’archivio. Non servirà giocare la mano 16.`,`You played ${played} of ${planned} rounds. The final ranking will be archived without playing round 16.`,`${played}/${planned} el oynandı. Son sıralama arşivlenecek.`),
+  async()=>{const ok=await finishGameNow();if(ok){render();toast(lt('Partita conclusa e salvata','Game finished and saved','Oyun bitirildi ve kaydedildi'));}},
+  lt('Termina e salva','Finish and save','Bitir ve kaydet')
+ );
+}
 function collaborativeView(){
  resetCollabDraftIfNewRound();
  const me=collabSession.playerIndex,current=collabRoom?.current_round||{},entries=collabRoom?.entries||[],mine=entries.find(x=>x.playerIndex===me),complete=state.rounds.length===totalRounds();
  if(mine&&!collabDirty){collabDraft={points:String(mine.points??''),infractions:Number(mine.infractions)||0,discardTakes:Number(mine.discardTakes)||0,winner:Boolean(mine.winner),didNotOpen:mine.didNotOpen===true};} /* senza discardTakes la correzione del punteggio falliva («undefined/4», 10/10) */
  if(complete)return `<div class="final-dashboard"><section class="panel final-panel"><div class="round-head"><h2>${t('finalRanking')}</h2></div>${finalView()}</section></div>${historyView()}`;
  const starter=Number.isInteger(current.starterIndex)?state.players[current.starterIndex]:null;
- return `<div class="collab-layout"><section class="panel collab-card"><div class="collab-who">${avatar(state.players[me],me,'small')}<div><span>${lt('Stai giocando come','Playing as','Oyuncu')}</span><strong>${esc(state.players[me])}</strong></div></div>${connectedLine()}${current.contract?(shareAccess?.code===sharedCode?ownerBoardView(current,entries):collabScoreView(current,entries,starter,mine)):collabContractView()} </section><aside class="panel"><div class="section-title"><h2>${t('totalRanking')}</h2><span class="pill">${t('lowest')}</span></div>${rankingView()}</aside></div>${historyView()}<p class="share-updated">${t('autoUpdate')}</p>`;
+ return `<div class="collab-layout"><section class="panel collab-card"><div class="collab-who">${avatar(state.players[me],me,'small')}<div><span>${lt('Stai giocando come','Playing as','Oyuncu')}</span><strong>${esc(state.players[me])}</strong></div></div>${connectedLine()}${current.contract?(shareAccess?.code===sharedCode?ownerBoardView(current,entries):collabScoreView(current,entries,starter,mine)):collabContractView()} </section><aside class="panel"><div class="section-title"><h2>${t('totalRanking')}</h2><span class="pill">${t('lowest')}</span></div>${rankingView()}</aside></div>${sharedFinishButton()}${historyView()}<p class="share-updated">${t('autoUpdate')}</p>`;
 }
 function collabContractView(){const canChoose=shareAccess?.code===sharedCode||collabSession?.playerIndex===chooserIndex();const done=new Set(state.rounds.map(r=>r.contract)),available=new Set(activeContracts()),nextMini=fixedContractSequence(state)?activeContracts()[state.rounds.length]:null,chooser=chooserIndex(),cutter=cutterIndex();return `<p class="eyebrow">${fixedContractSequence(state)?lt('Sequenza dei contratti assegnata','Assigned contract sequence','Belirlenen oyun sırası'):lt('Tutti possono scegliere','Everyone can choose','Herkes seçebilir')}</p><h2>${t('chooseGame')}</h2><p class="starter-banner">🎴 Sceglie: <strong>${esc(state.players[chooser]||'—')}</strong> · 🃏 Taglia: <strong>${esc(state.players[cutter]||'—')}</strong></p>${canChoose&&!fixedContractSequence(state)&&state.rounds.length<totalRounds()-1?`<button class="secondary" id="random-collab-contract">🎲 ${lt('Sorteggia la prossima mano','Draw next round','Sonraki eli kura ile seç')}</button>`:''}<div class="contracts">${contracts.filter(([n])=>available.has(n)).map(([n,title,desc])=>{const locked=!canChoose||done.has(n)||(fixedContractSequence(state)&&n!==nextMini)||(n===16&&state.rounds.length<totalRounds()-1);return `<button class="contract-card ${locked?'locked':''}" data-collab-contract="${n}" ${locked?'disabled':''}><strong>${n}. ${title}</strong><span>${n===15?'×2 automatico · ':''}${fixedContractSequence(state)&&n===nextMini?lt('Prossima nella sequenza','Next in sequence','Sıradaki oyun'):desc}</span></button>`}).join('')}</div>`;}
 function overrideKey(){return `amerikano-owner-override-${sharedCode||''}`;}
@@ -513,6 +528,7 @@ function historyView(){
 function resetDraft(){draft={contract:null,scores:{},infractions:{},discardTakes:{},double15:false,jokerClose:false,winner:null,cutJokers:0,didNotOpen:{}};}
 function alignGameTop(){requestAnimationFrame(()=>document.querySelector('.dashboard')?.scrollIntoView({block:'start',behavior:'auto'}));}
 function bind(){bindOwnerBoard();
+ document.querySelector('#finish-shared-now')?.addEventListener('click',confirmSharedFinish);
  document.querySelectorAll('[data-edit-saved-round]').forEach(b=>b.onclick=()=>editSavedRound(Number(b.dataset.editSavedRound)));
  document.querySelectorAll('[data-no-open-help]').forEach(b=>b.onclick=()=>toast(noOpenExplanation()));
  document.querySelectorAll('[data-discard-take], [data-infraction], [data-collab-take], [data-collab-inf]').forEach(b=>b.onpointerdown=e=>{if(e.button===0&&e.isPrimary!==false)e.preventDefault();});
