@@ -475,13 +475,15 @@ async function editSavedRound(index){
   toast(lt('Le partite concluse sono in sola lettura.','Completed games are read-only.','Biten oyunlar salt okunurdur.'));return;
  }
  const factor=Number(round.scoreMultiplier)||(round.contract===15||round.jokerClose?2:1);
+ const initialCutter=Number.isInteger(round.cutter)?round.cutter:Number.isInteger(round.starterIndex)?(round.starterIndex-2+game.players.length)%game.players.length:cutterIndex(index,game);
+ const initialCutJokers=Number(round.cutJokers)||0;
  const values=round.results.map((r,i)=>{
   const infractions=Number(r.infractions)||0;
   const points=Number.isFinite(Number(r.points))?Number(r.points):Math.max(0,Math.round(((Number(r.total)||0)-infractions*50)/factor));
   return {points,infractions,discardTakes:Number(r.discardTakes)||0,didNotOpen:r.didNotOpen===true};
  });
  closeModal();
- document.body.insertAdjacentHTML('beforeend',`<div class="modal-backdrop" id="modal"><div class="modal saved-round-editor" id="saved-round-editor"><p class="eyebrow">${lt('Solo amministratore','Administrator only','Yalnızca yönetici')}</p><h2>${lt('Modifica mano','Edit round','Eli düzenle')} ${index+1} · ${round.contract}. ${esc(contracts[round.contract-1]?.[1]||'')}</h2><p class="subtle">${lt('Correggi i valori e salva nel cloud. Il vincitore non può essere modificato.','Correct values and save to the cloud. The winner cannot be changed.','Değerleri düzeltip buluta kaydet. Kazanan değiştirilemez.')}</p><div class="saved-round-editor-list">${game.players.map((name,i)=>{const v=values[i],winner=round.results[i]?.winner===true;return `<fieldset class="saved-round-editor-player"><legend>${esc(name)}${winner?` · ${lt('Vincitore','Winner','Kazanan')}`:''}</legend><div class="saved-round-editor-fields"><label>${lt('Punti','Points','Puan')}<input data-edit-points="${i}" type="number" inputmode="numeric" min="0" max="9999" step="1" value="${v.points}" ${winner?'disabled':''}></label><label>${lt('Penalità','Penalties','Cezalar')}<input data-edit-infractions="${i}" type="number" inputmode="numeric" min="0" max="20" step="1" value="${v.infractions}"></label><label>${lt('Prese','Pickups','Alımlar')}<input data-edit-takes="${i}" type="number" inputmode="numeric" min="0" max="4" step="1" value="${v.discardTakes}"></label><label class="saved-round-editor-check"><input data-edit-no-open="${i}" type="checkbox" ${v.didNotOpen?'checked':''} ${winner?'disabled':''}> ${lt('Non ha aperto','Did not open','Açamadı')}</label></div></fieldset>`;}).join('')}</div><div class="actions"><button class="secondary" id="modal-cancel">${lt('Annulla','Cancel','İptal')}</button><button class="primary" id="save-saved-round">${lt('Salva modifiche','Save changes','Değişiklikleri kaydet')}</button></div></div></div>`);
+ document.body.insertAdjacentHTML('beforeend',`<div class="modal-backdrop" id="modal"><div class="modal saved-round-editor" id="saved-round-editor"><p class="eyebrow">${lt('Solo amministratore','Administrator only','Yalnızca yönetici')}</p><h2>${lt('Modifica mano','Edit round','Eli düzenle')} ${index+1} · ${round.contract}. ${esc(contracts[round.contract-1]?.[1]||'')}</h2><p class="subtle">${lt('Correggi i valori e salva nel cloud. Il vincitore non può essere modificato.','Correct values and save to the cloud. The winner cannot be changed.','Değerleri düzeltip buluta kaydet. Kazanan değiştirilemez.')}</p><fieldset class="saved-round-editor-player saved-round-editor-meta"><legend>${lt('Taglio della mano','Cutting the deck','Desteyi kesme')}</legend><div class="saved-round-editor-fields"><label>${lt('Ha tagliato','Cut by','Kesen oyuncu')}<select id="edit-round-cutter">${game.players.map((name,i)=>`<option value="${i}" ${i===initialCutter?'selected':''}>${esc(name)}</option>`).join('')}</select></label><label>${lt('Jolly trovati al taglio','Jokers found on cut','Kesimde bulunan joker')}<input id="edit-round-jokers" type="number" inputmode="numeric" min="0" max="99" step="1" value="${initialCutJokers}"></label></div></fieldset><div class="saved-round-editor-list">${game.players.map((name,i)=>{const v=values[i],winner=round.results[i]?.winner===true;return `<fieldset class="saved-round-editor-player"><legend>${esc(name)}${winner?` · ${lt('Vincitore','Winner','Kazanan')}`:''}</legend><div class="saved-round-editor-fields"><label>${lt('Punti','Points','Puan')}<input data-edit-points="${i}" type="number" inputmode="numeric" min="0" max="9999" step="1" value="${v.points}" ${winner?'disabled':''}></label><label>${lt('Penalità','Penalties','Cezalar')}<input data-edit-infractions="${i}" type="number" inputmode="numeric" min="0" max="20" step="1" value="${v.infractions}"></label><label>${lt('Prese','Pickups','Alımlar')}<input data-edit-takes="${i}" type="number" inputmode="numeric" min="0" max="4" step="1" value="${v.discardTakes}"></label><label class="saved-round-editor-check"><input data-edit-no-open="${i}" type="checkbox" ${v.didNotOpen?'checked':''} ${winner?'disabled':''}> ${lt('Non ha aperto','Did not open','Açamadı')}</label></div></fieldset>`;}).join('')}</div><div class="actions"><button class="secondary" id="modal-cancel">${lt('Annulla','Cancel','İptal')}</button><button class="primary" id="save-saved-round">${lt('Salva modifiche','Save changes','Değişiklikleri kaydet')}</button></div></div></div>`);
  document.querySelector('#modal-cancel').onclick=closeModal;
  document.querySelector('#save-saved-round').onclick=async()=>{
   if(!canEditSavedRounds()){closeModal();return;}
@@ -497,10 +499,17 @@ async function editSavedRound(index){
    }
    edited.push({points:nums[0],infractions:nums[1],discardTakes:nums[2],didNotOpen:!winner&&document.querySelector(`[data-edit-no-open="${i}"]`)?.checked===true});
   }
-  if(stableJson(edited)===stableJson(values)){toast(lt('Nessuna modifica da salvare.','No changes to save.','Kaydedilecek değişiklik yok.'));return;}
+  const cutRaw=String(document.querySelector('#edit-round-cutter')?.value??'');
+  const jokersRaw=String(document.querySelector('#edit-round-jokers')?.value??'');
+  const cutter=Number(cutRaw),cutJokers=Number(jokersRaw);
+  if(!/^\d{1,2}$/.test(cutRaw)||!Number.isInteger(cutter)||cutter>=game.players.length
+     ||!/^\d{1,2}$/.test(jokersRaw)||!Number.isInteger(cutJokers)||cutJokers>99){
+   toast(lt('Controlla chi ha tagliato e quanti jolly ha trovato.','Check who cut the deck and how many jokers they found.','Kesen oyuncu ve joker sayısını kontrol edin.'));return;
+  }
+  if(stableJson(edited)===stableJson(values)&&cutter===initialCutter&&cutJokers===initialCutJokers){toast(lt('Nessuna modifica da salvare.','No changes to save.','Kaydedilecek değişiklik yok.'));return;}
   button.disabled=true;
   try{
-   const result=await ShareService.editSavedRound(access,index,round,edited);
+   const result=await ShareService.editSavedRound(access,index,round,{results:edited,cutter,cutJokers});
    if(result?.ok!==true){
     const msg=result?.reason==='round_changed'
      ?lt('Questa mano è stata modificata da un altro telefono. Chiudi, riapri e riprova.','This round changed on another phone. Reopen and try again.','Bu el başka telefonda değiştirildi.')
@@ -510,7 +519,8 @@ async function editSavedRound(index){
     toast(msg);return;
    }
    const checked=await ShareService.read(access.code);
-   if(!checked?.state||stableJson(checked.state.rounds?.[index]?.results)!==stableJson(result.results)){
+   if(!checked?.state||stableJson(checked.state.rounds?.[index]?.results)!==stableJson(result.results)
+     ||checked.state.rounds?.[index]?.cutter!==cutter||Number(checked.state.rounds?.[index]?.cutJokers)!==cutJokers){
     toast(lt('Salvato, ma la verifica del cloud non è riuscita: aggiorna la partita.','Saved, but cloud verification failed: refresh the game.','Kaydedildi ancak bulut doğrulanamadı.'));return;
    }
    closeModal();
