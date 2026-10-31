@@ -141,6 +141,8 @@ input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(241,199,11
 .saved-round-editor-player legend { padding:0 6px; font-weight:800; }
 .saved-round-editor-fields { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; }
 .saved-round-editor-fields label { display:grid; gap:4px; color:var(--muted); font-size:12px; }
+.saved-round-editor-meta { margin:12px 0; }
+.saved-round-editor-fields select { min-width:0; width:100%; padding:10px; border-radius:9px; }
 .saved-round-editor-fields input[type="number"] { min-width:0; width:100%; padding:10px; border-radius:9px; }
 .saved-round-editor-fields .saved-round-editor-check { display:flex; align-items:center; gap:8px; color:var(--ink); }
 .saved-round-editor-check input { width:20px; height:20px; flex-shrink:0; }
