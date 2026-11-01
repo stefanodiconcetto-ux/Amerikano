@@ -84,7 +84,7 @@ function analyze(source){
   const chosen=c.flatMap(x=>x.chosen),notChosen=c.flatMap(x=>x.notChosen);
   const ts=p.timeline.filter(x=>Number.isFinite(x.when)),middle=Math.floor(ts.length/2);
   const period=xs=>({games:xs.length,avgPoints:mean(xs.map(x=>x.points/x.rounds)),closures:xs.reduce((n,x)=>n+x.closed,0),hands:xs.reduce((n,x)=>n+x.rounds,0),openingKnown:xs.reduce((n,x)=>n+x.openingKnown,0),notOpened:xs.reduce((n,x)=>n+x.notOpened,0)});
-  return {...p,contracts:c,cheapest:ordered[0]||null,costliest:ordered.at(-1)||null,chosen,notChosen,meanLost:mean(p.lostPoints),opponents:[...p.opponents.values()].sort((a,b)=>b.games-a.games),history:{first:period(ts.slice(0,middle)),second:period(ts.slice(middle)),known:ts.length},enough:p.games>=3&&p.hands>=12};
+  return {...p,contracts:c,cheapest:ordered[0]||null,costliest:ordered.at(-1)||null,chosen,notChosen,meanLost:mean(p.lostPoints),opponents:[...p.opponents.values()].sort((a,b)=>b.games-a.games),history:{first:period(ts.slice(0,middle)),second:period(ts.slice(middle)),known:ts.length},enough:p.games>=3&&p.points.length>=12};
  });
  return {games:games.length,players};
 }
