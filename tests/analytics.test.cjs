@@ -109,3 +109,64 @@ test('Profile sample requires twelve observed scores, not just twelve historical
  const p=a.analyze(games).players.find(x=>x.name==='A');
  assert.equal(p.games,3);assert.equal(p.hands,12);assert.equal(p.points.length,0);assert.equal(p.enough,false);
 });
+
+
+test('Readable overview shows four answers first and six optional curiosities per player',()=>{
+ const a=api(),g=game([round(1,0,[0,50]),round(2,1,[25,0])]);
+ const report=a.analyze([g]),html=a.render(report);
+ assert.match(html,/Le tue partite, spiegate semplice/);
+ assert.match(html,/In breve/);
+ assert.match(html,/Altre curiosità/);
+ assert.equal((html.match(/class="advanced-insight"/g)||[]).length,8);
+ assert.equal((html.match(/class="advanced-insight advanced-insight-small"/g)||[]).length,12);
+ for(const name of ['lost','closure','risk','comeback','choice','decisive','penalties','opponents','trend','profile']){
+  assert.equal((html.match(new RegExp('data-analytics-key="'+name+'"','g'))||[]).length,2,name);
+ }
+ assert.match(html,/<details class="advanced-more-section">/);
+ assert.match(html,/Tocca un risultato per capire da quali mani arriva/);
+});
+test('Short explanations include observed sample and never show unknown as zero',()=>{
+ const a=api(),r=a.analyze([game([round(1,null,[25,35])])]),html=a.render(r);
+ assert.match(html,/Dati insufficienti/);
+ assert.ok(!html.includes('class="advanced-value">0 su 0'));
+ assert.match(html,/1 partita conclusa/);
+ assert.match(html,/1 mano/);
+ assert.ok(!html.includes('1 partite concluse'));
+ assert.ok(!html.includes('1 mani'));
+ const d=a.detail(r,'A','closure');
+ assert.equal(d.value,'Dati insufficienti');
+});
+test('Do not label a single contract the safest without at least two comparable contracts',()=>{
+ const a=api(),r=a.analyze([game([round(1,0,[0,50]),round(1,0,[0,60]),round(1,1,[40,0])])]);
+ const html=a.render(r);assert.match(html,/Con quali contratti fai meno punti/);
+ assert.match(html,/Dati insufficienti/);
+ assert.equal(a.detail(r,'A','risk').value,'Dati insufficienti');
+ const r2=a.analyze([game([round(1,0,[0,40]),round(2,1,[40,0]),round(1,0,[0,40]),round(2,0,[0,50]),round(1,1,[50,0]),round(2,0,[0,30])])]);
+ assert.match(a.render(r2),/Contratto 1/);
+ assert.equal(a.detail(r2,'A','risk').value,'Contratto 1');
+});
+test('Overview only opens the selected player and keeps others collapsed on re-render',()=>{
+ const a=api(),r=a.analyze([game([round(1,0,[0,20])])]);
+ const html=a.render(r,v=>String(v),'B');
+ assert.match(html,/<details class="advanced-player" data-advanced-player="B" open>/);
+ assert.ok(!html.includes('data-advanced-player="A" open'));
+ assert.equal((html.match(/class="advanced-player"/g)||[]).length,2);
+});
+test('User-provided player names and controls are HTML escaped, including quotes and angle brackets',()=>{
+ const a=api(),name='" onmouseover="alert(1)"><img src=x>',r=a.analyze([game([round(16,0,[0,50])],{players:[name,'B']})]);
+ const html=a.render(r);
+ assert.ok(!html.includes('<img src=x>'));
+ assert.ok(!html.includes('data-analytics-name="'+name+'"'));
+ assert.match(html,/&quot; onmouseover=&quot;/);
+ assert.match(html,/data-analytics-key="contract:16"/);
+ assert.match(html,/Bitiş/);
+});
+test('Technical calculations are preserved for all ten metrics and all used contracts',()=>{
+ const a=api(),r=a.analyze([game([round(1,0,[0,30]),round(16,1,[30,0])])]);
+ for(const key of Object.keys(a.metricNames))assert.ok(a.detail(r,'A',key),key);
+ assert.ok(a.detail(r,'A','contract:1'));
+ assert.ok(a.detail(r,'A','contract:16'));
+ const html=a.render(r);
+ assert.match(html,/Guarda i contratti/);
+ assert.equal((html.match(/data-analytics-key="contract:/g)||[]).length,4);
+});
