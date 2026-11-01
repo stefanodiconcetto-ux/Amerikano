@@ -81,5 +81,68 @@ function analyze(source){
  });
  return {games:games.length,players};
 }
-root.AmerikanoAnalytics=Object.freeze({analyze,fmt,pct});
+
+const metricNames={
+ lost:'Costo mani perse',risk:'Contratti sicuri/rischiosi',choice:'Scelta efficace',
+ comeback:'Rimonta e tenuta',decisive:'Mano decisiva',closure:'Dipendenza dalle chiusure',
+ penalties:'Impatto penalità',opponents:'Avversari e contratti',trend:'Andamento nel tempo',profile:'Profilo di gioco'
+};
+function detail(report,name,key){
+ const p=report.players.find(x=>x.name===name);if(!p)return null;
+ let title=metricNames[key]||'',value='—',how='',lines=[];
+ const c=key.startsWith('contract:')?p.contracts[Number(key.split(':')[1])-1]:null;
+ if(c){
+  title='Contratto '+c.number;value=c.hands+' mani';
+  how='Chiusura diversa da apertura. Dati mancanti esclusi, non trasformati in zero.';
+  lines=['Chiusure: '+c.closures+'/'+c.closuresKnown,'Aperture mancate: '+c.notOpened+'/'+c.openingKnown,
+   'Punti medi: '+fmt(c.average)+' su '+c.points.length+' mani; deviazione '+fmt(c.volatility),
+   'Media senza chiudere: '+fmt(mean(c.lostPoints))+' su '+c.lostPoints.length+' mani',
+   'Scelta volontaria: '+c.chosen.length+' mani; chiuse '+c.chosen.filter(x=>x.won).length,
+   'Non scelta in mani volontarie: '+c.notChosen.length+' mani; chiuse '+c.notChosen.filter(x=>x.won).length,...c.entries.slice(0,50)];
+ }else if(key==='lost'){
+  value=fmt(p.meanLost)+' punti';how='Media dei punteggi registrati quando è noto che un altro giocatore ha chiuso.';
+  lines=[p.lostPoints.length+' mani note',...p.contracts.filter(c=>c.lostPoints.length).map(c=>'C'+c.number+': '+fmt(mean(c.lostPoints))+' su '+c.lostPoints.length)];
+ }else if(key==='risk'){
+  value=p.cheapest?'C'+p.cheapest.number+' / C'+p.costliest.number:'—';how='Media e deviazione dei punti per contratto. Confronto solo con almeno 3 punteggi noti per contratto; non misura la probabilità di vincere.';
+  lines=p.contracts.filter(c=>c.hands).map(c=>'C'+c.number+': media '+fmt(c.average)+', deviazione '+fmt(c.volatility)+' ('+c.points.length+'/'+c.hands+' punteggi, '+c.closures+'/'+c.closuresKnown+' chiusure)');
+ }else if(key==='choice'){
+  value=p.chosen.length+' / '+p.notChosen.length+' mani';how='Solo round marcati esplicitamente come scelta volontaria e con scelta e punteggi registrati.';
+  lines=['Scelte: '+p.chosen.filter(x=>x.won).length+'/'+p.chosen.length+' chiuse, '+fmt(mean(p.chosen.map(x=>x.score)))+' punti medi','Non scelte: '+p.notChosen.filter(x=>x.won).length+'/'+p.notChosen.length+' chiuse, '+fmt(mean(p.notChosen.map(x=>x.score)))+' punti medi'];
+ }else if(key==='comeback'){
+  value=p.comebacks+' / '+p.leadHeld;how='Rimonta: non primo dopo la prima mano e primo al termine; tenuta: primo dopo ogni mano; pari punti condividono la prima posizione.';
+  lines=['Rimonte '+p.comebacks,'Testa sempre mantenuta '+p.leadHeld,'Partite ricostruibili '+p.timeline.length+'/'+p.games];
+ }else if(key==='decisive'){
+  value=p.decisive?'Mano '+p.decisive.round+' · '+p.decisive.diff+' punti':'—';how='Massima variazione assoluta del distacco fra primo e secondo finali univoci. Non dimostra che una sola mano abbia causato la vittoria.';
+  lines=p.decisive?[p.decisive.label,'Contratto '+p.decisive.contract,'Variazione '+p.decisive.diff,'Distacco finale '+p.decisive.gap]:['Nessuna partita con due posizioni finali univoche'];
+ }else if(key==='closure'){
+  value=p.withClose.wins+'/'+p.withClose.games+' vs '+p.withoutClose.wins+'/'+p.withoutClose.games;how='Primi posti con almeno una chiusura e senza chiusure, sulle sole partite con punteggi completi. Correlazione, non causalità.';
+  lines=['Con chiusure: '+pct(p.withClose.wins,p.withClose.games),'Senza chiusure: '+pct(p.withoutClose.wins,p.withoutClose.games),'Mani chiuse '+p.closed+'/'+p.closeKnown];
+ }else if(key==='penalties'){
+  value=p.penaltyScenarios.filter(x=>x.actual!==x.without).length+' cambi';how='Si sottraggono 50 punti per penalità a tutti. Solo partite con punteggi e penalità noti per ogni partecipante: scenario aritmetico, non risultato reale.';
+  lines=['Copertura '+p.penaltyScenarios.length+'/'+p.games+' partite; '+p.penaltyUnknown+' mani senza dato',...p.penaltyScenarios.map(x=>x.label+': '+x.actual+'° → '+x.without+'° con '+x.penalties+' penalità')];
+ }else if(key==='opponents'){
+  value=p.opponents.length+' avversari';how='Solo partite realmente disputate insieme e con punteggi noti; durata e contratti sono quelli del filtro corrente.';
+  lines=p.opponents.flatMap(o=>[o.name+': '+o.games+' partite; avanti '+o.ahead+', dietro '+o.behind+', pari '+o.ties,...o.items.slice(0,8)]);
+ }else if(key==='trend'){
+  value=p.history.known+' partite';how='Due metà cronologiche delle partite con timestamp valido. Campioni piccoli non provano trend.';
+  lines=[['Prima metà',p.history.first],['Seconda metà',p.history.second]].map(([name,x])=>name+': '+x.games+' partite; '+fmt(x.avgPoints)+' punti/mano, '+x.closures+'/'+x.hands+' chiusure, '+x.notOpened+'/'+x.openingKnown+' aperture mancate note');
+ }else if(key==='profile'){
+  value=p.enough?'Dati sufficienti':'Pochi dati';how='Descrizione senza giudizi personali: almeno 3 partite e 12 mani per un profilo.';
+  lines=p.enough?[p.games+' partite, '+p.hands+' mani','Chiusure '+p.closed+'/'+p.closeKnown,'Punti lasciati '+fmt(p.meanLost),'Aperture mancate '+p.notOpened+'/'+p.openingKnown,'Penalità '+p.penalties+' su '+p.penaltyKnown+' mani']:['Disponibili '+p.games+' partite, '+p.hands+' mani; minimo 3 e 12'];
+ }else return null;
+ return {title,value,how,lines};
+}
+function render(report,escape){
+ const esc=typeof escape==='function'?escape:v=>String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+ if(!report.players.length)return '<p class="subtle">Nessuna partita conclusa nel filtro corrente.</p>';
+ const button=(name,key,title,sub)=>'<button type="button" data-analytics-name="'+esc(name)+'" data-analytics-key="'+esc(key)+'"><strong>'+esc(title)+'</strong><span>'+esc(detail(report,name,key)?.value||'—')+'</span><small>'+esc(sub)+'</small></button>';
+ return '<div class="advanced-analytics"><p class="subtle">Dati di '+report.games+' partite concluse nel filtro corrente. “—” significa dato insufficiente. Ogni valore apre calcolo e campione.</p>'+
+ report.players.map((p,i)=>'<details class="advanced-player" '+(!i?'open':'')+'><summary>'+esc(p.name)+' · '+p.games+' partite · '+p.hands+' mani</summary><div class="advanced-grid">'+
+ Object.entries(metricNames).map(([key,title])=>button(p.name,key,title,'Dettagli e dati osservati')).join('')+
+ '</div><details class="advanced-contracts"><summary>Contratti · '+p.contracts.filter(c=>c.hands).length+' osservati</summary><div class="advanced-grid">'+
+ p.contracts.filter(c=>c.hands).map(c=>button(p.name,'contract:'+c.number,'Contratto '+c.number,c.closures+'/'+c.closuresKnown+' chiusure · '+c.openingKnown+' aperture rilevate')).join('')+
+ '</div></details></details>').join('')+'</div>';
+}
+
+root.AmerikanoAnalytics=Object.freeze({analyze,fmt,pct,detail,render,metricNames});
 })(window);
