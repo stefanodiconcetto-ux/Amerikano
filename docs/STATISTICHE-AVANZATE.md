@@ -17,7 +17,7 @@ Requisiti confermati da Stefano nel documento canonico [Personal Hub / VISIONE-P
 | Impatto penalità | Scenario di ricalcolo `totale - 50 × infrazioni` per tutti i giocatori, solo quando i dati di tutti sono completi. Non rappresenta una partita realmente giocata |
 | Avversari e contratti | Confronti soltanto fra partecipanti alle stesse partite e alle stesse mani, raggruppando anche i punteggi e le chiusure per contratto identico |
 | Andamento nel tempo | Prima e seconda metà delle partite con timestamp valido, con copertura di aperture, chiusure e media punti per mano; confronti descrittivi, non causalità |
-| Profilo di gioco | Sintesi descrittiva solo se almeno 3 partite e 12 mani. Nessuna valutazione personale definitiva |
+| Profilo di gioco | Sintesi descrittiva solo se almeno 3 partite e 12 punteggi di mano noti. Nessuna valutazione personale definitiva |
 
 Ogni metrica è un pulsante e apre un pannello con spiegazione, formula e dettaglio del campione. Anche ogni contratto osservato è cliccabile e distingue **mano chiusa** da **contratto aperto**. I valori «—» indicano copertura insufficiente o risultato non calcolabile. I dati assenti, inclusi `didNotOpen` e `infractions`, non si trasformano in `false` o zero. I risultati non modificano dati, classifiche, proprietà o punteggi delle partite.
 
@@ -32,7 +32,7 @@ Ogni metrica è un pulsante e apre un pannello con spiegazione, formula e dettag
 
 ## Prove
 
-**15/15 test eseguiti sui sorgenti di `analytics.js` in V8 con API Node emulata**: pareggi, punteggi mancanti, chiusure sconosciute, scelta volontaria non registrata, penalità incomplete, campione minimo, confronto avversari per contratto e mani abbinate, HTML escaping e non-mutazione. Sintassi JavaScript di `analytics.js`, `app.js` e `sw.js` verificata; ordine di caricamento JS, scheda Analisi e cache offline controllati staticamente.
+**16/16 test eseguiti sui sorgenti di `analytics.js` in V8 con API Node emulata**: pareggi, punteggi mancanti, chiusure sconosciute, scelta volontaria non registrata, penalità incomplete, campione minimo, confronto avversari per contratto e mani abbinate, HTML escaping e non-mutazione. Sintassi JavaScript di `analytics.js`, `app.js` e `sw.js` verificata; ordine di caricamento JS, scheda Analisi e cache offline controllati staticamente.
 
 **NON VERIFICATI**: suite Node reale da checkout pulito, caricamento su browser reale nei tre formati, gestione sessioni condivise/SSO, apertura/ritorno dei dettagli sul Samsung, revisione indipendente, produzione o sincronizzazione della copia interna in Personal Hub. Nessun test ha letto o alterato punteggi personali.
 
