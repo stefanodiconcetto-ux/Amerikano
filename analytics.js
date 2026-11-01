@@ -19,7 +19,7 @@ function analyze(source){
  const games=(Array.isArray(source)?source:[]).filter(g=>g&&!g.testGame&&Array.isArray(g.players)&&g.players.length>1&&Array.isArray(g.rounds)&&g.rounds.length).slice().sort((a,b)=>(date(a)||0)-(date(b)||0));
  const map=new Map(),get=name=>{if(!map.has(name))map.set(name,person(name));return map.get(name);};
  for(const g of games){
-  const count=g.players.length,totals=Array(count).fill(0),complete=Array(count).fill(true),penaltyComplete=Array(count).fill(true),penalties=Array(count).fill(0),closures=Array(count).fill(0),positions=[],label=day(g);
+  const count=g.players.length,allWinnersKnown=g.rounds.every(round=>winner(round)!==null),totals=Array(count).fill(0),complete=Array(count).fill(true),penaltyComplete=Array(count).fill(true),penalties=Array(count).fill(0),closures=Array(count).fill(0),positions=[],label=day(g);
   g.players.forEach(name=>get(name).games++);
   for(let ri=0;ri<g.rounds.length;ri++){
    const round=g.rounds[ri],win=winner(round),cn=num(round.contract),contractIndex=Number.isInteger(cn)&&cn>=1&&cn<=16?cn-1:-1;
@@ -32,7 +32,7 @@ function analyze(source){
     if(c){c.hands++;if(score!==null)c.points.push(score);c.entries.push(label+' · mano '+(ri+1)+' · '+(score===null?'punteggio sconosciuto':score+' punti')+(win===null?' · chiusura sconosciuta':win===i?' · chiusa':' · non chiusa'));}
     if(typeof r.didNotOpen==='boolean'){p.openingKnown++;if(r.didNotOpen)p.notOpened++;if(c){c.openingKnown++;if(r.didNotOpen)c.notOpened++;}}
     if(inf===null){penaltyComplete[i]=false;p.penaltyUnknown++;}else{p.penaltyKnown++;p.penalties+=inf;penalties[i]+=inf;}
-    if(c&&voluntary&&score!==null)(round.chooser===i?c.chosen:c.notChosen).push({score,won:win===i});
+    if(c&&voluntary&&score!==null&&win!==null)(round.chooser===i?c.chosen:c.notChosen).push({score,won:win===i});
    });
    positions.push(complete.every(Boolean)?rank(totals):null);
   }
@@ -40,7 +40,7 @@ function analyze(source){
   const final=rank(totals),leaders=final.filter(x=>x===1).length;
   g.players.forEach((name,i)=>{
    const p=get(name),pos=positions.map(x=>x?.[i]??null),win=final[i]===1;
-   const withClose=closures[i]>0?p.withClose:p.withoutClose;withClose.games++;if(win)withClose.wins++;
+   if(allWinnersKnown){const withClose=closures[i]>0?p.withClose:p.withoutClose;withClose.games++;if(win)withClose.wins++;}
    if(pos.every(x=>x!==null)){
     if(pos[0]>1&&pos[pos.length-1]===1)p.comebacks++;
     if(pos.every(x=>x===1))p.leadHeld++;
@@ -106,7 +106,7 @@ function detail(report,name,key){
   value=p.cheapest?'C'+p.cheapest.number+' / C'+p.costliest.number:'—';how='Media e deviazione dei punti per contratto. Confronto solo con almeno 3 punteggi noti per contratto; non misura la probabilità di vincere.';
   lines=p.contracts.filter(c=>c.hands).map(c=>'C'+c.number+': media '+fmt(c.average)+', deviazione '+fmt(c.volatility)+' ('+c.points.length+'/'+c.hands+' punteggi, '+c.closures+'/'+c.closuresKnown+' chiusure)');
  }else if(key==='choice'){
-  value=p.chosen.length+' / '+p.notChosen.length+' mani';how='Solo round marcati esplicitamente come scelta volontaria e con scelta e punteggi registrati.';
+  value=(p.chosen.length||p.notChosen.length)?p.chosen.length+' / '+p.notChosen.length+' mani':'—';how='Solo round marcati esplicitamente come scelta volontaria e con scelta e punteggi registrati.';
   lines=['Scelte: '+p.chosen.filter(x=>x.won).length+'/'+p.chosen.length+' chiuse, '+fmt(mean(p.chosen.map(x=>x.score)))+' punti medi','Non scelte: '+p.notChosen.filter(x=>x.won).length+'/'+p.notChosen.length+' chiuse, '+fmt(mean(p.notChosen.map(x=>x.score)))+' punti medi'];
  }else if(key==='comeback'){
   value=p.comebacks+' / '+p.leadHeld;how='Rimonta: non primo dopo la prima mano e primo al termine; tenuta: primo dopo ogni mano; pari punti condividono la prima posizione.';
