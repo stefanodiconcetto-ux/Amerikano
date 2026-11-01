@@ -1,9 +1,9 @@
 // Cache offline: non identifica la release. Ogni navigazione online controlla la rete,
 // aggiorna il contenuto salvato e usa la cache solo se la rete non e' disponibile.
 const PREFIX = `amerikano:${self.registration.scope}:`;
-const CACHE = `${PREFIX}offline-network-first-v3`;
+const CACHE = `${PREFIX}offline-network-first-v4`;
 const ASSETS = ['./', './index.html', './styles.css', './i18n.js', './supabase-config.js',
- './share.js', './docs.js', './docs/Manuale-Amerikano-Segnapunti.pdf', './app.js',
+ './share.js', './docs.js', './analytics.js', './docs/Manuale-Amerikano-Segnapunti.pdf', './app.js',
  './manifest.webmanifest', './icon.svg', './icon-192.png', './icon-512.png'];
 const CORE = ASSETS.filter(path => path !== './docs/Manuale-Amerikano-Segnapunti.pdf');
 const SCOPE = new URL(self.registration.scope);
@@ -11,7 +11,7 @@ const INDEX = new URL('./index.html', SCOPE).href;
 const ASSET_URLS = new Set(ASSETS.map(path => new URL(path, SCOPE).href));
 // Controllo versioni basato sul contenuto, non su un numero aggiornato manualmente.
 // Soltanto le richieste di verifica provocano il reload: i normali download non lo fanno.
-const LIVE_ASSETS = new Set(['./index.html','./app.js','./share.js','./docs.js','./i18n.js','./styles.css']
+const LIVE_ASSETS = new Set(['./index.html','./app.js','./analytics.js','./share.js','./docs.js','./i18n.js','./styles.css']
  .map(path => new URL(path,SCOPE).href));
 
 function cacheKey(request) {
