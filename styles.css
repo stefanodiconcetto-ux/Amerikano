@@ -1204,3 +1204,20 @@ button.override-action.is-active:hover {
   .stats-modal .player-stat-section summary{padding:11px 12px}
   .stats-modal .player-stat-section summary .stat-summary::after{right:12px;top:11px}
 }
+
+
+/* Analisi statistiche: quattro schede e griglie leggibili anche su Android. */
+.stats-modal .stat-tabs{grid-template-columns:repeat(4,minmax(0,1fr))}
+.stats-modal .stat-tab{font-size:11px;min-width:0;white-space:normal;overflow-wrap:anywhere}
+.advanced-analytics{display:grid;gap:14px}
+.advanced-player{border:1px solid var(--line);border-radius:13px;padding:8px 10px;background:rgba(255,255,255,.04)}
+.advanced-player>summary,.advanced-contracts>summary{cursor:pointer;font-weight:750;line-height:1.4;min-height:44px;display:flex;align-items:center;overflow-wrap:anywhere}
+.advanced-contracts{margin-top:10px;border-top:1px solid var(--line)}
+.advanced-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:8px 0 12px}
+.advanced-grid button{min-width:0;display:grid;gap:5px;text-align:left;align-content:start;min-height:100px;padding:12px 10px;border:1px solid var(--line);border-radius:11px;background:#203c32;color:var(--ink);cursor:pointer;overflow-wrap:anywhere}
+.advanced-grid button strong{font-size:13px;line-height:1.3;color:var(--accent)}
+.advanced-grid button span{font-size:18px;font-weight:750;line-height:1.25}
+.advanced-grid button small{font-size:11px;line-height:1.3;color:var(--muted)}
+.advanced-grid button:focus-visible,.advanced-player>summary:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+@media(min-width:700px){.advanced-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:370px){.stats-modal .stat-tab{font-size:10px;padding:7px 1px}.advanced-grid button{padding:10px 7px}.advanced-grid button span{font-size:15px}}
