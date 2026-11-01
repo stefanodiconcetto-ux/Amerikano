@@ -80,3 +80,17 @@ test('Every of ten metrics and every played contract has a clickable detail and 
  assert.ok(!html.includes('<img src=x'));assert.ok(html.includes('&lt;img'));
  assert.match(html,/data-analytics-name="&lt;img/);
 });
+
+test('A recorded voluntary choice with unknown winner is not counted as a loss',()=>{
+ const a=api(),g=game([round(1,null,[10,12],{chooser:0,voluntaryChoice:true})]);
+ const p=a.analyze([g]).players.find(x=>x.name==='A');
+ assert.equal(p.chosen.length,0);
+ assert.equal(a.detail(a.analyze([g]),'A','choice').value,'—');
+});
+test('A game with missing winning-round history does not count as a game without closures',()=>{
+ const a=api(),g=game([round(1,null,[20,30]),round(2,0,[0,12])]);
+ const p=a.analyze([g]).players.find(x=>x.name==='B');
+ assert.equal(p.withClose.games,0);
+ assert.equal(p.withoutClose.games,0);
+ assert.equal(p.closeKnown,1);
+});
