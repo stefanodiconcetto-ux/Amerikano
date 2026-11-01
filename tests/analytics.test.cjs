@@ -103,3 +103,9 @@ test('Opponent contract comparison uses only identical rounds actually played to
  assert.equal(c.contracts['1'].hands,1);
  assert.match(a.detail(d,'A','opponents').lines.join(' '),/C1: 2 mani insieme/);
 });
+
+test('Profile sample requires twelve observed scores, not just twelve historical rounds',()=>{
+ const a=api(),games=Array.from({length:3},(_,i)=>game(Array.from({length:4},()=>round(1,0,[{infractions:0},{total:5,infractions:0}])),{id:'g-'+i,startedAt:'2026-10-'+(20+i)+'T12:00:00Z'}));
+ const p=a.analyze(games).players.find(x=>x.name==='A');
+ assert.equal(p.games,3);assert.equal(p.hands,12);assert.equal(p.points.length,0);assert.equal(p.enough,false);
+});
