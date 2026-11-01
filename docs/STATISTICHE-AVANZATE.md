@@ -45,3 +45,14 @@ Stato iniziale: **ramo di sviluppo, non pubblicato**. La PR di merge va revision
 PR #3 integrata in `main` con commit `4d32407353e80d4f2a919bc46db3c07809feea7a`. `analytics.js`, `app.js`, `index.html` e `sw.js` riletti dopo il merge. Tutti i 16 test isolati V8 superati; sintassi valida, scheda «Analisi» e caricamento dell'asset verificati staticamente. La pubblicazione del codice su `main` è verificata; **la raggiungibilità del sito GitHub Pages e il collaudo nel browser reale non sono stati verificati** in questa sessione. Nessuna modifica a partite, Supabase o token.
 
 Personal Hub PR #13 ha eliminato la copia giocabile e apre soltanto questo sito ufficiale. Il precedente paragrafo sullo stato del ramo descrive la fase precedente al merge, non la situazione attuale. Nessuna sincronizzazione di una seconda versione è necessaria.
+
+
+## Semplificazione dell'interfaccia — 1 novembre 2026
+
+**Feedback:** la pagina Analisi è difficile da capire. I 10 indicatori simultanei per ogni giocatore nascondevano i risultati utili dietro nomi tecnici e dati senza una chiara interpretazione.
+
+**Nuova esperienza mobile, senza cambiare le formule:** ogni giocatore espande una sola sezione con quattro risposte iniziali: «Quando non chiudi», «Quante mani chiudi?», «Con quali contratti fai meno punti?», «Le tue rimonte». Ogni scheda mostra il numero, una spiegazione in italiano corrente e il campione osservato; i dati insufficienti sono indicati esplicitamente (mai inventati come zero). Il contratto con media più bassa viene evidenziato solo se ci sono **almeno due contratti confrontabili** e almeno tre risultati per ciascuno. Le altre sei analisi si trovano in «Altre curiosità» e i singoli contratti in «Guarda i contratti»: rimangono tutti cliccabili. Un solo giocatore aperto alla volta, con selezione preservata dopo il ritorno dal dettaglio.
+
+Nel dettaglio sono mostrati prima il valore e la spiegazione; i dati grezzi restano accessibili su richiesta tramite «Mostra le mani e i calcoli». La nuova disposizione usa una sola colonna per gli indicatori sui telefoni e due colonne da 700 px, senza dipendere da scorrimenti orizzontali. Versioni degli asset rinnovate con cache offline v5.
+
+**Controlli:** 22/22 test isolati sui sorgenti in V8, tra cui escaping HTML, tutti i 10 indicatori e contratti accessibili, valori sconosciuti non assimilati a zero, ranking affidabile solo con campioni confrontabili, selezione del giocatore, etichette singolare/plurale; sintassi di `app.js`, `analytics.js`, `sw.js` e riferimento ai nuovi asset verificati staticamente. Nessuna modifica a schema, partite, cloud, token o punteggi. Test Node da checkout pulito, screenshot 320/390px, navigazione reale su Android, controverifica indipendente **non effettuati**. Stato al momento della scrittura: candidato nel ramo `feat/clear-statistics-mobile-20261101`, non ancora pubblicato.

@@ -90,9 +90,9 @@ function analyze(source){
 }
 
 const metricNames={
- lost:'Costo mani perse',risk:'Contratti sicuri/rischiosi',choice:'Scelta efficace',
- comeback:'Rimonta e tenuta',decisive:'Mano decisiva',closure:'Dipendenza dalle chiusure',
- penalties:'Impatto penalità',opponents:'Avversari e contratti',trend:'Andamento nel tempo',profile:'Profilo di gioco'
+ lost:'Quando non chiudi',risk:'Con quali contratti fai meno punti?',choice:'Quando scegli tu',
+ comeback:'Le tue rimonte',decisive:'La mano che ha cambiato il distacco',closure:'Quante mani chiudi?',
+ penalties:'Quanto pesano le penalità?',opponents:'Contro chi giochi meglio?',trend:'Come stai andando nel tempo?',profile:'Il tuo modo di giocare'
 };
 function detail(report,name,key){
  const p=report.players.find(x=>x.name===name);if(!p)return null;
@@ -110,45 +110,110 @@ function detail(report,name,key){
   value=fmt(p.meanLost)+' punti';how='Media dei punteggi registrati quando è noto che un altro giocatore ha chiuso.';
   lines=[p.lostPoints.length+' mani note',...p.contracts.filter(c=>c.lostPoints.length).map(c=>'C'+c.number+': '+fmt(mean(c.lostPoints))+' su '+c.lostPoints.length)];
  }else if(key==='risk'){
-  value=p.cheapest?'C'+p.cheapest.number+' / C'+p.costliest.number:'—';how='Media e deviazione dei punti per contratto. Confronto solo con almeno 3 punteggi noti per contratto; non misura la probabilità di vincere.';
+  value=p.contracts.filter(c=>c.points.length>=3).length>=2?'Contratto '+p.cheapest.number:'Dati insufficienti';how='Media e deviazione dei punti per contratto. Confronto solo con almeno 3 punteggi noti per contratto; non misura la probabilità di vincere.';
   lines=p.contracts.filter(c=>c.hands).map(c=>'C'+c.number+': media '+fmt(c.average)+', deviazione '+fmt(c.volatility)+' ('+c.points.length+'/'+c.hands+' punteggi, '+c.closures+'/'+c.closuresKnown+' chiusure)');
  }else if(key==='choice'){
   value=(p.chosen.length||p.notChosen.length)?p.chosen.length+' / '+p.notChosen.length+' mani':'—';how='Solo round marcati esplicitamente come scelta volontaria e con scelta e punteggi registrati.';
   lines=['Scelte: '+p.chosen.filter(x=>x.won).length+'/'+p.chosen.length+' chiuse, '+fmt(mean(p.chosen.map(x=>x.score)))+' punti medi','Non scelte: '+p.notChosen.filter(x=>x.won).length+'/'+p.notChosen.length+' chiuse, '+fmt(mean(p.notChosen.map(x=>x.score)))+' punti medi'];
  }else if(key==='comeback'){
-  value=p.comebacks+' / '+p.leadHeld;how='Rimonta: non primo dopo la prima mano e primo al termine; tenuta: primo dopo ogni mano; pari punti condividono la prima posizione.';
+  value=p.timeline.length?p.comebacks+' rimonte':'Dati insufficienti';how='Rimonta: non primo dopo la prima mano e primo al termine; tenuta: primo dopo ogni mano; pari punti condividono la prima posizione.';
   lines=['Rimonte '+p.comebacks,'Testa sempre mantenuta '+p.leadHeld,'Partite ricostruibili '+p.timeline.length+'/'+p.games];
  }else if(key==='decisive'){
   value=p.decisive?'Mano '+p.decisive.round+' · '+p.decisive.diff+' punti':'—';how='Massima variazione assoluta del distacco fra primo e secondo finali univoci. Non dimostra che una sola mano abbia causato la vittoria.';
   lines=p.decisive?[p.decisive.label,'Contratto '+p.decisive.contract,'Variazione '+p.decisive.diff,'Distacco finale '+p.decisive.gap]:['Nessuna partita con due posizioni finali univoche'];
  }else if(key==='closure'){
-  value=p.withClose.wins+'/'+p.withClose.games+' vs '+p.withoutClose.wins+'/'+p.withoutClose.games;how='Primi posti con almeno una chiusura e senza chiusure, sulle sole partite con punteggi completi. Correlazione, non causalità.';
+  value=p.withClose.games+p.withoutClose.games?p.withClose.wins+'/'+p.withClose.games+' vs '+p.withoutClose.wins+'/'+p.withoutClose.games:'Dati insufficienti';how='Primi posti con almeno una chiusura e senza chiusure, sulle sole partite con punteggi completi. Correlazione, non causalità.';
   lines=['Con chiusure: '+pct(p.withClose.wins,p.withClose.games),'Senza chiusure: '+pct(p.withoutClose.wins,p.withoutClose.games),'Mani chiuse '+p.closed+'/'+p.closeKnown];
  }else if(key==='penalties'){
-  value=p.penaltyScenarios.filter(x=>x.actual!==x.without).length+' cambi';how='Si sottraggono 50 punti per penalità a tutti. Solo partite con punteggi e penalità noti per ogni partecipante: scenario aritmetico, non risultato reale.';
+  value=p.penaltyScenarios.length?p.penaltyScenarios.filter(x=>x.actual!==x.without).length+' cambi di posizione':'Dati insufficienti';how='Si sottraggono 50 punti per penalità a tutti. Solo partite con punteggi e penalità noti per ogni partecipante: scenario aritmetico, non risultato reale.';
   lines=['Copertura '+p.penaltyScenarios.length+'/'+p.games+' partite; '+p.penaltyUnknown+' mani senza dato',...p.penaltyScenarios.map(x=>x.label+': '+x.actual+'° → '+x.without+'° con '+x.penalties+' penalità')];
  }else if(key==='opponents'){
   value=p.opponents.length+' avversari';how='Solo partite realmente disputate insieme e con punteggi noti; durata e contratti sono quelli del filtro corrente.';
   lines=p.opponents.flatMap(o=>[o.name+': '+o.games+' partite; avanti '+o.ahead+', dietro '+o.behind+', pari '+o.ties,...Object.entries(o.contracts).sort((a,b)=>Number(a[0])-Number(b[0])).map(([n,c])=>'C'+n+': '+c.hands+' mani insieme · punti medi '+fmt(c.ourPoints/c.hands)+' vs '+fmt(c.otherPoints/c.hands)+' · chiusure '+c.ourClosures+' vs '+c.otherClosures+' su '+c.closeKnown+' con vincitore noto'),...o.items.slice(0,8)]);
  }else if(key==='trend'){
-  value=p.history.known+' partite';how='Due metà cronologiche delle partite con timestamp valido. Campioni piccoli non provano trend.';
+  value=p.history.known>=2?p.history.known+' partite':'Dati insufficienti';how='Due metà cronologiche delle partite con timestamp valido. Campioni piccoli non provano trend.';
   lines=[['Prima metà',p.history.first],['Seconda metà',p.history.second]].map(([name,x])=>name+': '+x.games+' partite; '+fmt(x.avgPoints)+' punti/mano, '+x.closures+'/'+x.hands+' chiusure, '+x.notOpened+'/'+x.openingKnown+' aperture mancate note');
  }else if(key==='profile'){
-  value=p.enough?'Dati sufficienti':'Pochi dati';how='Descrizione senza giudizi personali: almeno 3 partite e 12 mani per un profilo.';
-  lines=p.enough?[p.games+' partite, '+p.hands+' mani','Chiusure '+p.closed+'/'+p.closeKnown,'Punti lasciati '+fmt(p.meanLost),'Aperture mancate '+p.notOpened+'/'+p.openingKnown,'Penalità '+p.penalties+' su '+p.penaltyKnown+' mani']:['Disponibili '+p.games+' partite, '+p.hands+' mani; minimo 3 e 12'];
+  value=p.enough?'Dati sufficienti':'Pochi dati';how='Descrizione senza giudizi personali: servono almeno 3 partite e 12 punteggi di mano effettivamente registrati.';
+  lines=p.enough?[p.games+' partite, '+p.hands+' mani','Chiusure '+p.closed+'/'+p.closeKnown,'Punti lasciati '+fmt(p.meanLost),'Aperture mancate '+p.notOpened+'/'+p.openingKnown,'Penalità '+p.penalties+' su '+p.penaltyKnown+' mani']:['Disponibili '+p.games+' partite e '+p.points.length+' punteggi noti; minimo 3 partite e 12 punteggi'];
  }else return null;
  return {title,value,how,lines};
 }
-function render(report,escape){
+
+function insight(p,key){
+ const knownContracts=p.contracts.filter(c=>c.points.length>=3);
+ const knownGames=p.timeline.length;
+ const countKnown=p.closeKnown;
+ const samples={
+  lost:p.lostPoints.length,
+  risk:knownContracts.length,
+  comeback:knownGames,
+  closure:countKnown,
+  choice:p.chosen.length+p.notChosen.length,
+  decisive:p.decisive?1:0,
+  penalties:p.penaltyScenarios.length,
+  opponents:p.opponents.length,
+  trend:p.history.known,
+  profile:p.points.length
+ };
+ let value='Dati insufficienti',description='Non ci sono ancora abbastanza informazioni per un confronto affidabile.';
+ if(key==='lost'&&samples.lost){
+  value=fmt(p.meanLost)+' punti';
+  description='Punti medi nelle '+samples.lost+' mani in cui ha chiuso un altro giocatore.';
+ }else if(key==='risk'&&samples.risk>=2){
+  value='Contratto '+p.cheapest.number;
+  description='Quello con meno punti medi tra '+samples.risk+' contratti con almeno 3 risultati ciascuno.';
+ }else if(key==='comeback'&&samples.comeback){
+  value=p.comebacks+' '+(p.comebacks===1?'rimonta':'rimonte');
+  description='È tornato al primo posto in '+p.comebacks+' delle '+samples.comeback+' partite ricostruibili.';
+ }else if(key==='closure'&&countKnown){
+  value=p.closed+' su '+countKnown;
+  description='Mani chiuse su quelle con vincitore registrato.';
+ }else if(key==='choice'&&samples.choice){
+  value=p.chosen.length+' scelte';
+  description='Mani in cui la scelta volontaria è stata registrata.';
+ }else if(key==='decisive'&&p.decisive){
+  value='Mano '+p.decisive.round;
+  description='Il maggiore cambiamento del distacco tra i primi due finali.';
+ }else if(key==='penalties'&&samples.penalties){
+  const changes=p.penaltyScenarios.filter(x=>x.actual!==x.without).length;
+  value=changes+' '+(changes===1?'classifica cambiata':'classifiche cambiate');
+  description='Simulazione senza penalità su '+samples.penalties+' partite con dati completi.';
+ }else if(key==='opponents'&&samples.opponents){
+  value=samples.opponents+' '+(samples.opponents===1?'avversario':'avversari');
+  description='Confronti solo con chi ha giocato le stesse partite.';
+ }else if(key==='trend'&&samples.trend>=2){
+  value=samples.trend+' partite';
+  description='Confronto tra la prima e la seconda metà delle partite datate.';
+ }else if(key==='profile'&&p.enough){
+  value=p.games+' partite';
+  description='Riepilogo costruito con almeno 3 partite e 12 punteggi noti.';
+ }
+ return {key,title:metricNames[key],value,description,available:value!=='Dati insufficienti'};
+}
+function render(report,escape,selectedPlayer){
  const esc=typeof escape==='function'?escape:v=>String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
- if(!report.players.length)return '<p class="subtle">Nessuna partita conclusa nel filtro corrente.</p>';
- const button=(name,key,title,sub)=>'<button type="button" data-analytics-name="'+esc(name)+'" data-analytics-key="'+esc(key)+'"><strong>'+esc(title)+'</strong><span>'+esc(detail(report,name,key)?.value||'—')+'</span><small>'+esc(sub)+'</small></button>';
- return '<div class="advanced-analytics"><p class="subtle">Dati di '+report.games+' partite concluse nel filtro corrente. “—” significa dato insufficiente. Ogni valore apre calcolo e campione.</p>'+
- report.players.map((p,i)=>'<details class="advanced-player" '+(!i?'open':'')+'><summary>'+esc(p.name)+' · '+p.games+' partite · '+p.hands+' mani</summary><div class="advanced-grid">'+
- Object.entries(metricNames).map(([key,title])=>button(p.name,key,title,'Dettagli e dati osservati')).join('')+
- '</div><details class="advanced-contracts"><summary>Contratti · '+p.contracts.filter(c=>c.hands).length+' osservati</summary><div class="advanced-grid">'+
- p.contracts.filter(c=>c.hands).map(c=>button(p.name,'contract:'+c.number,'Contratto '+c.number,c.closures+'/'+c.closuresKnown+' chiusure · '+c.openingKnown+' aperture rilevate')).join('')+
- '</div></details></details>').join('')+'</div>';
+ if(!report.players.length)return '<p class="subtle">Non ci sono partite concluse da analizzare con questi filtri.</p>';
+ const chosen=report.players.some(p=>p.name===selectedPlayer)?selectedPlayer:report.players[0].name;
+ const primary=['lost','closure','risk','comeback'];
+ const secondary=['choice','decisive','penalties','opponents','trend','profile'];
+ const card=(p,key,compact=false)=>{
+  const info=insight(p,key);
+  return '<button type="button" class="advanced-insight'+(compact?' advanced-insight-small':'')+'" data-analytics-name="'+esc(p.name)+'" data-analytics-key="'+key+'" aria-label="'+esc(info.title+': '+info.value+'. Apri dettagli')+'"><strong>'+esc(info.title)+'</strong><span class="advanced-value'+(info.available?'':' advanced-empty')+'">'+esc(info.value)+'</span><small>'+esc(info.description)+'</small><span class="advanced-more" aria-hidden="true">Dettagli ›</span></button>';
+ };
+ return '<div class="advanced-analytics"><div class="advanced-intro"><strong>Le tue partite, spiegate semplice</strong><p>Seleziona un giocatore. Prima trovi quattro risposte utili; le altre curiosità sono sotto. Tocca un risultato per capire da quali mani arriva.</p><small>'+report.games+' '+(report.games===1?'partita conclusa':'partite concluse')+' nei filtri scelti · “Dati insufficienti” non significa zero.</small></div>'+
+ report.players.map(p=>{
+  const used=p.contracts.filter(c=>c.hands);
+  return '<details class="advanced-player" data-advanced-player="'+esc(p.name)+'" '+(p.name===chosen?'open':'')+'><summary><span class="advanced-player-name">'+esc(p.name)+'</span><span class="advanced-player-count">'+p.games+' '+(p.games===1?'partita':'partite')+' · '+p.hands+' '+(p.hands===1?'mano':'mani')+'</span></summary>'+
+  '<div class="advanced-player-content"><h3>In breve</h3><div class="advanced-grid advanced-highlights">'+primary.map(key=>card(p,key)).join('')+'</div>'+
+  '<details class="advanced-more-section"><summary>Altre curiosità <span>'+secondary.length+'</span></summary><div class="advanced-grid advanced-more-grid">'+secondary.map(key=>card(p,key,true)).join('')+'</div></details>'+
+  '<details class="advanced-contracts"><summary>Guarda i contratti <span>'+used.length+'</span></summary><p class="subtle">Tocca un contratto per vedere punti, chiusure e dati disponibili. Mancare un dato non equivale a zero.</p><div class="advanced-grid advanced-more-grid">'+used.map(c=>cardContract(p,c)).join('')+'</div></details>'+
+  '</div></details>';
+ }).join('')+'</div>';
+ function cardContract(p,c){
+  const key='contract:'+c.number;
+  return '<button type="button" class="advanced-insight advanced-insight-small" data-analytics-name="'+esc(p.name)+'" data-analytics-key="'+key+'"><strong>Contratto '+c.number+(c.number===16?' · Bitiş':'')+'</strong><span class="advanced-value">'+c.hands+' '+(c.hands===1?'mano':'mani')+'</span><small>'+c.closures+' chiuse su '+c.closuresKnown+' con vincitore noto · '+c.points.length+' punteggi noti</small><span class="advanced-more" aria-hidden="true">Dettagli ›</span></button>';
+ }
 }
 
 root.AmerikanoAnalytics=Object.freeze({analyze,fmt,pct,detail,render,metricNames});
