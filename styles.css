@@ -1274,3 +1274,14 @@ button.override-action.is-active:hover {
  .advanced-player-count{grid-column:1;grid-row:2;width:auto}
  .advanced-player>summary::after{grid-column:2;grid-row:1;margin:0;text-align:center}
 }
+
+
+/* Home: one ongoing-games area. No redundant empty-state buttons on mobile. */
+.open-games-head{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.open-games-head h3{margin:0;min-width:0;line-height:1.35}
+.open-games-head-actions{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-left:auto}
+.open-games-head-actions button[hidden]{display:none!important}
+.open-games-head-actions #home-owned-games{width:auto;min-width:0;min-height:42px;padding:7px 10px;font-size:12px;line-height:1.2}
+.open-games-head-actions #open-games-refresh{min-width:44px;min-height:44px}
+.open-games-empty{margin:10px 0 4px;line-height:1.45}
+@media(max-width:420px){.open-games-head{align-items:start}.open-games-head-actions{max-width:100%}.open-games-head h3{font-size:17px}}

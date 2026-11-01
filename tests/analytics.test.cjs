@@ -170,3 +170,52 @@ test('Technical calculations are preserved for all ten metrics and all used cont
  assert.match(html,/Guarda i contratti/);
  assert.equal((html.match(/data-analytics-key="contract:/g)||[]).length,4);
 });
+
+
+test('Opening one analysis player does not close another; explicit expanded selections survive refresh',()=>{
+ const a=api(),report=a.analyze([game([round(1,0,[0,40])])]);
+ const html=a.render(report,undefined,['A','B']);
+ assert.match(html,/data-advanced-player="A" open/);
+ assert.match(html,/data-advanced-player="B" open/);
+ const appSource=fs.readFileSync(__dirname+'/../app.js','utf8');
+ assert.ok(!appSource.includes('other.open=false'));
+ assert.match(appSource,/statsOpenPlayers/);
+ assert.match(appSource,/el\.querySelector\('summary'\)/);
+});
+test('Home has only one Partite in corso area and differentiates checking, empty, and unavailable',()=>{
+ const source=fs.readFileSync(__dirname+'/../app.js','utf8');
+ const start=source.indexOf('function openGamesView(){'),end=source.indexOf('async function refreshOpenGames(){',start);
+ assert.ok(start>=0&&end>start);
+ const code=source.slice(start,end);
+ const context={testMode:false,window:{ShareService:{configured:()=>true}},openGames:[],openGamesError:false,ownedOngoingCount:0,
+  loadOwnedGames:()=>[],shareAccess:null,lt:it=>it,esc:s=>String(s),minutesAgo:()=>0};
+ let html=vm.runInNewContext(code+';openGamesView()',context);
+ assert.equal((html.match(/Partite in corso/g)||[]).length,1);
+ assert.match(html,/Nessuna partita in corso/);
+ assert.ok(!html.includes('Partite aperte'));
+ assert.equal((html.match(/id="home-owned-games"/g)||[]).length,1);
+ context.openGames=null;html=vm.runInNewContext(code+';openGamesView()',context);
+ assert.match(html,/Verifica delle partite in corso/);
+ assert.ok(!html.includes('Nessuna partita in corso'));
+ context.openGamesError=true;html=vm.runInNewContext(code+';openGamesView()',context);
+ assert.match(html,/Verifica non riuscita/);
+ context.openGames=[];context.openGamesError=false;context.ownedOngoingCount=2;
+ html=vm.runInNewContext(code+';openGamesView()',context);
+ assert.match(html,/Nessun’altra partita aperta/);
+});
+test('Refresh touches only the ongoing-games panel and rebinds all its actions',async()=>{
+ const source=fs.readFileSync(__dirname+'/../app.js','utf8');
+ const start=source.indexOf('async function refreshOpenGames(){'),end=source.indexOf('function bindOpenGames(){',start);
+ assert.ok(start>=0&&end>start);
+ const panel={outerHTML:'<section>old</section>'};
+ let fullRenders=0,binds=0,ownedRefresh=0,requests=0;
+ const ctx={window:{ShareService:{configured:()=>true}},ShareService:{listOpen:async()=>{requests++;return [];}},
+  sharedCode:null,spectator:false,testMode:false,openGames:null,openGamesError:false,setupOpen:false,
+  state:{players:[]},document:{querySelector:selector=>selector==='#home-open-games'?panel:null},
+  render:()=>{fullRenders++},openGamesView:()=>'<section>updated panel</section>',
+  bindOpenGames:()=>{binds++},refreshOwnedGamesLabel:()=>{ownedRefresh++},atHomeWithCompleted:()=>false};
+ await vm.runInNewContext(source.slice(start,end)+';refreshOpenGames()',ctx);
+ assert.equal(requests,1);assert.equal(fullRenders,0);
+ assert.equal(panel.outerHTML,'<section>updated panel</section>');assert.equal(binds,1);assert.equal(ownedRefresh,1);
+ assert.match(source,/r\.onclick=refreshOpenGames;const owned=document\.querySelector/);
+});

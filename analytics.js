@@ -195,6 +195,7 @@ function render(report,escape,selectedPlayer){
  const esc=typeof escape==='function'?escape:v=>String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
  if(!report.players.length)return '<p class="subtle">Non ci sono partite concluse da analizzare con questi filtri.</p>';
  const chosen=report.players.some(p=>p.name===selectedPlayer)?selectedPlayer:report.players[0].name;
+ const expanded=Array.isArray(selectedPlayer)?new Set(selectedPlayer):new Set([chosen]);
  const primary=['lost','closure','risk','comeback'];
  const secondary=['choice','decisive','penalties','opponents','trend','profile'];
  const card=(p,key,compact=false)=>{
@@ -204,7 +205,7 @@ function render(report,escape,selectedPlayer){
  return '<div class="advanced-analytics"><div class="advanced-intro"><strong>Le tue partite, spiegate semplice</strong><p>Seleziona un giocatore. Prima trovi quattro risposte utili; le altre curiosità sono sotto. Tocca un risultato per capire da quali mani arriva.</p><small>'+report.games+' '+(report.games===1?'partita conclusa':'partite concluse')+' nei filtri scelti · “Dati insufficienti” non significa zero.</small></div>'+
  report.players.map(p=>{
   const used=p.contracts.filter(c=>c.hands);
-  return '<details class="advanced-player" data-advanced-player="'+esc(p.name)+'" '+(p.name===chosen?'open':'')+'><summary><span class="advanced-player-name">'+esc(p.name)+'</span><span class="advanced-player-count">'+p.games+' '+(p.games===1?'partita':'partite')+' · '+p.hands+' '+(p.hands===1?'mano':'mani')+'</span></summary>'+
+  return '<details class="advanced-player" data-advanced-player="'+esc(p.name)+'" '+(expanded.has(p.name)?'open':'')+'><summary><span class="advanced-player-name">'+esc(p.name)+'</span><span class="advanced-player-count">'+p.games+' '+(p.games===1?'partita':'partite')+' · '+p.hands+' '+(p.hands===1?'mano':'mani')+'</span></summary>'+
   '<div class="advanced-player-content"><h3>In breve</h3><div class="advanced-grid advanced-highlights">'+primary.map(key=>card(p,key)).join('')+'</div>'+
   '<details class="advanced-more-section"><summary>Altre curiosità <span>'+secondary.length+'</span></summary><div class="advanced-grid advanced-more-grid">'+secondary.map(key=>card(p,key,true)).join('')+'</div></details>'+
   '<details class="advanced-contracts"><summary>Guarda i contratti <span>'+used.length+'</span></summary><p class="subtle">Tocca un contratto per vedere punti, chiusure e dati disponibili. Mancare un dato non equivale a zero.</p><div class="advanced-grid advanced-more-grid">'+used.map(c=>cardContract(p,c)).join('')+'</div></details>'+

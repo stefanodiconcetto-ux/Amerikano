@@ -60,3 +60,12 @@ Nel dettaglio sono mostrati prima il valore e la spiegazione; i dati grezzi rest
 ## Esito integrazione interfaccia semplificata — 1 novembre 2026
 
 PR #4 integrata in `main`, commit `fac305458e66014bb67cf5735547da816c32ee64`. Sorgenti `analytics.js`, `app.js`, `styles.css`, `index.html` e `sw.js` riletti da GitHub: quattro indicatori immediati, sei approfondimenti a richiesta, contratti separati, giocatore preservato al ritorno, spiegazioni in testa al dettaglio e numeri di calcolo apribili. Cache offline aggiornata alla v5 e riferimenti asset versionati. **22/22 test isolati** superati; nessun cambiamento a partite, punteggi o dati cloud. **Pubblicazione del codice su main verificata.** La disponibilità effettiva del nuovo front-end su GitHub Pages, screenshot/mobile reale e suite completa da checkout pulito **non verificati** in questa sessione. La versione precedente resta ripristinabile tramite revert del commit, senza migrazione dati.
+
+
+## Stabilità accordion e stato partite in corso — 1 novembre 2026
+
+Segnalazione UX: aprendo un accordion della sezione Analisi il contenuto si spostava perché veniva automaticamente chiuso il precedente. La selezione è ora indipendente: aprire un giocatore **non chiude gli altri**; le sezioni aperte sono preservate anche dopo un aggiornamento del pannello, evitando salti causati dalla contrazione di contenuti precedenti.
+
+Home: un solo riquadro «Partite in corso» invece di un pulsante «Nessuna partita in corso» separato e un successivo riquadro «Partite aperte». Il riquadro distingue caricamento, nessuna partita, errore di rete e «nessun'altra partita» quando esistono partite proprie. L'accesso alle proprie partite appare nello stesso riquadro solo se necessario. Il refresh cloud aggiorna **solo il riquadro**, senza ricreare accordion, posizione di lettura o editor; riaggancia anche i pulsanti dopo il refresh. Nessuna cancellazione, migrazione o modifica ai dati di gioco.
+
+Prove sul ramo `fix/home-accordion-stability-20261101`: **25/25** test V8 isolati sui sorgenti GitHub, inclusi accordion multipli, stato vuoto/caricamento/errore, un solo pulsante, aggiornamento solo del riquadro e ripristino del click sulle proprie partite. JS sintatticamente valido. Asset versionati `20261101-home-stable-v1`, cache offline `offline-network-first-v6`. **Non eseguiti** Node test da checkout pulito, screenshot/mobile reale e revisione indipendente. Stato al salvataggio: candidato, non ancora pubblicato.

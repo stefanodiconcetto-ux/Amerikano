@@ -1,7 +1,7 @@
 // Cache offline: non identifica la release. Ogni navigazione online controlla la rete,
 // aggiorna il contenuto salvato e usa la cache solo se la rete non e' disponibile.
 const PREFIX = `amerikano:${self.registration.scope}:`;
-const CACHE = `${PREFIX}offline-network-first-v5`;
+const CACHE = `${PREFIX}offline-network-first-v6`;
 const ASSETS = ['./', './index.html', './styles.css', './i18n.js', './supabase-config.js',
  './share.js', './docs.js', './analytics.js', './docs/Manuale-Amerikano-Segnapunti.pdf', './app.js',
  './manifest.webmanifest', './icon.svg', './icon-192.png', './icon-512.png'];
