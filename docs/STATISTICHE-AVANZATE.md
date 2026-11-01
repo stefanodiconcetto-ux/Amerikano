@@ -39,3 +39,9 @@ Ogni metrica è un pulsante e apre un pannello con spiegazione, formula e dettag
 ## Rilascio e ripristino
 
 Stato iniziale: **ramo di sviluppo, non pubblicato**. La PR di merge va revisionata prima di pubblicare su GitHub Pages: `main` è il ramo del gioco ufficiale condiviso. Personal Hub non contiene più una copia giocabile di Amerikano: PR #13 di `StefanoDiConcetto/personal-hub` pubblicata, collegamento nella stessa scheda al solo sito ufficiale. Non riprodurre il modulo in PH. I dati locali dei due domini rimangono separati: lo strumento di backup precedente in PH esporta lo schema v3 senza cancellare i dati, mentre il ripristino ufficiale può sostituire dati già presenti sul dominio di destinazione; salvare prima anche quelli. Rollback: annullare commit/UI e ripristinare gli asset della precedente release; `analytics.js` non richiede migrazioni o ripristini dati. Nessun costo o servizio aggiuntivo previsto.
+
+## Esito integrazione — 1 novembre 2026
+
+PR #3 integrata in `main` con commit `4d32407353e80d4f2a919bc46db3c07809feea7a`. `analytics.js`, `app.js`, `index.html` e `sw.js` riletti dopo il merge. Tutti i 16 test isolati V8 superati; sintassi valida, scheda «Analisi» e caricamento dell'asset verificati staticamente. La pubblicazione del codice su `main` è verificata; **la raggiungibilità del sito GitHub Pages e il collaudo nel browser reale non sono stati verificati** in questa sessione. Nessuna modifica a partite, Supabase o token.
+
+Personal Hub PR #13 ha eliminato la copia giocabile e apre soltanto questo sito ufficiale. Il precedente paragrafo sullo stato del ramo descrive la fase precedente al merge, non la situazione attuale. Nessuna sincronizzazione di una seconda versione è necessaria.
