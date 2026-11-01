@@ -52,8 +52,15 @@ function analyze(source){
    }
    g.players.forEach((other,j)=>{
     if(i===j)return;
-    const o=p.opponents.get(other)||{name:other,games:0,ahead:0,behind:0,ties:0,items:[]};o.games++;
+    const o=p.opponents.get(other)||{name:other,games:0,ahead:0,behind:0,ties:0,items:[],contracts:{}};o.games++;
     if(totals[i]<totals[j])o.ahead++;else if(totals[i]>totals[j])o.behind++;else o.ties++;
+    g.rounds.forEach(round=>{
+     const c=num(round.contract),aScore=num(round.results?.[i]?.total),bScore=num(round.results?.[j]?.total);
+     if(!Number.isInteger(c)||c<1||c>16||aScore===null||bScore===null)return;
+     const row=o.contracts[c]||={hands:0,ourPoints:0,otherPoints:0,ourClosures:0,otherClosures:0,closeKnown:0};
+     row.hands++;row.ourPoints+=aScore;row.otherPoints+=bScore;
+     const closer=winner(round);if(closer!==null){row.closeKnown++;if(closer===i)row.ourClosures++;if(closer===j)row.otherClosures++;}
+    });
     o.items.push(label+': '+totals[i]+' – '+totals[j]+' punti · '+g.rounds.length+' mani');
     p.opponents.set(other,o);
    });
@@ -122,7 +129,7 @@ function detail(report,name,key){
   lines=['Copertura '+p.penaltyScenarios.length+'/'+p.games+' partite; '+p.penaltyUnknown+' mani senza dato',...p.penaltyScenarios.map(x=>x.label+': '+x.actual+'° → '+x.without+'° con '+x.penalties+' penalità')];
  }else if(key==='opponents'){
   value=p.opponents.length+' avversari';how='Solo partite realmente disputate insieme e con punteggi noti; durata e contratti sono quelli del filtro corrente.';
-  lines=p.opponents.flatMap(o=>[o.name+': '+o.games+' partite; avanti '+o.ahead+', dietro '+o.behind+', pari '+o.ties,...o.items.slice(0,8)]);
+  lines=p.opponents.flatMap(o=>[o.name+': '+o.games+' partite; avanti '+o.ahead+', dietro '+o.behind+', pari '+o.ties,...Object.entries(o.contracts).sort((a,b)=>Number(a[0])-Number(b[0])).map(([n,c])=>'C'+n+': '+c.hands+' mani insieme · punti medi '+fmt(c.ourPoints/c.hands)+' vs '+fmt(c.otherPoints/c.hands)+' · chiusure '+c.ourClosures+' vs '+c.otherClosures+' su '+c.closeKnown+' con vincitore noto'),...o.items.slice(0,8)]);
  }else if(key==='trend'){
   value=p.history.known+' partite';how='Due metà cronologiche delle partite con timestamp valido. Campioni piccoli non provano trend.';
   lines=[['Prima metà',p.history.first],['Seconda metà',p.history.second]].map(([name,x])=>name+': '+x.games+' partite; '+fmt(x.avgPoints)+' punti/mano, '+x.closures+'/'+x.hands+' chiusure, '+x.notOpened+'/'+x.openingKnown+' aperture mancate note');
