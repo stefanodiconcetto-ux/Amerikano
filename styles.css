@@ -1269,5 +1269,8 @@ button.override-action.is-active:hover {
  .advanced-grid .advanced-insight{padding:12px;min-height:0}
  .advanced-grid .advanced-value{font-size:20px}
  .advanced-player>summary{padding:11px 12px}
- .advanced-player-count{width:100%}
+ .advanced-player>summary{display:grid;grid-template-columns:minmax(0,1fr) 26px;grid-template-rows:auto auto;row-gap:4px}
+ .advanced-player-name{grid-column:1;grid-row:1}
+ .advanced-player-count{grid-column:1;grid-row:2;width:auto}
+ .advanced-player>summary::after{grid-column:2;grid-row:1;margin:0;text-align:center}
 }
