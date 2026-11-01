@@ -90,9 +90,9 @@ function analyze(source){
 }
 
 const metricNames={
- lost:'Costo mani perse',risk:'Contratti sicuri/rischiosi',choice:'Scelta efficace',
- comeback:'Rimonta e tenuta',decisive:'Mano decisiva',closure:'Dipendenza dalle chiusure',
- penalties:'Impatto penalità',opponents:'Avversari e contratti',trend:'Andamento nel tempo',profile:'Profilo di gioco'
+ lost:'Quando non chiudi',risk:'Con quali contratti fai meno punti?',choice:'Quando scegli tu',
+ comeback:'Le tue rimonte',decisive:'La mano che ha cambiato il distacco',closure:'Quante mani chiudi?',
+ penalties:'Quanto pesano le penalità?',opponents:'Contro chi giochi meglio?',trend:'Come stai andando nel tempo?',profile:'Il tuo modo di giocare'
 };
 function detail(report,name,key){
  const p=report.players.find(x=>x.name===name);if(!p)return null;
@@ -139,16 +139,81 @@ function detail(report,name,key){
  }else return null;
  return {title,value,how,lines};
 }
-function render(report,escape){
- const esc=typeof escape==='function'?escape:v=>String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
- if(!report.players.length)return '<p class="subtle">Nessuna partita conclusa nel filtro corrente.</p>';
- const button=(name,key,title,sub)=>'<button type="button" data-analytics-name="'+esc(name)+'" data-analytics-key="'+esc(key)+'"><strong>'+esc(title)+'</strong><span>'+esc(detail(report,name,key)?.value||'—')+'</span><small>'+esc(sub)+'</small></button>';
- return '<div class="advanced-analytics"><p class="subtle">Dati di '+report.games+' partite concluse nel filtro corrente. “—” significa dato insufficiente. Ogni valore apre calcolo e campione.</p>'+
- report.players.map((p,i)=>'<details class="advanced-player" '+(!i?'open':'')+'><summary>'+esc(p.name)+' · '+p.games+' partite · '+p.hands+' mani</summary><div class="advanced-grid">'+
- Object.entries(metricNames).map(([key,title])=>button(p.name,key,title,'Dettagli e dati osservati')).join('')+
- '</div><details class="advanced-contracts"><summary>Contratti · '+p.contracts.filter(c=>c.hands).length+' osservati</summary><div class="advanced-grid">'+
- p.contracts.filter(c=>c.hands).map(c=>button(p.name,'contract:'+c.number,'Contratto '+c.number,c.closures+'/'+c.closuresKnown+' chiusure · '+c.openingKnown+' aperture rilevate')).join('')+
- '</div></details></details>').join('')+'</div>';
+
+function insight(p,key){
+ const knownContracts=p.contracts.filter(c=>c.points.length>=3);
+ const knownGames=p.timeline.length;
+ const countKnown=p.closeKnown;
+ const samples={
+  lost:p.lostPoints.length,
+  risk:knownContracts.length,
+  comeback:knownGames,
+  closure:countKnown,
+  choice:p.chosen.length+p.notChosen.length,
+  decisive:p.decisive?1:0,
+  penalties:p.penaltyScenarios.length,
+  opponents:p.opponents.length,
+  trend:p.history.known,
+  profile:p.points.length
+ };
+ let value='Dati insufficienti',description='Non ci sono ancora abbastanza informazioni per un confronto affidabile.';
+ if(key==='lost'&&samples.lost){
+  value=fmt(p.meanLost)+' punti';
+  description='Punti medi nelle '+samples.lost+' mani in cui ha chiuso un altro giocatore.';
+ }else if(key==='risk'&&samples.risk>=2){
+  value='Contratto '+p.cheapest.number;
+  description='Quello con meno punti medi tra '+samples.risk+' contratti con almeno 3 risultati ciascuno.';
+ }else if(key==='comeback'&&samples.comeback){
+  value=p.comebacks+' '+(p.comebacks===1?'rimonta':'rimonte');
+  description='È tornato al primo posto in '+p.comebacks+' delle '+samples.comeback+' partite ricostruibili.';
+ }else if(key==='closure'&&countKnown){
+  value=p.closed+' su '+countKnown;
+  description='Mani chiuse su quelle con vincitore registrato.';
+ }else if(key==='choice'&&samples.choice){
+  value=p.chosen.length+' scelte';
+  description='Mani in cui la scelta volontaria è stata registrata.';
+ }else if(key==='decisive'&&p.decisive){
+  value='Mano '+p.decisive.round;
+  description='Il maggiore cambiamento del distacco tra i primi due finali.';
+ }else if(key==='penalties'&&samples.penalties){
+  const changes=p.penaltyScenarios.filter(x=>x.actual!==x.without).length;
+  value=changes+' '+(changes===1?'classifica cambiata':'classifiche cambiate');
+  description='Simulazione senza penalità su '+samples.penalties+' partite con dati completi.';
+ }else if(key==='opponents'&&samples.opponents){
+  value=samples.opponents+' '+(samples.opponents===1?'avversario':'avversari');
+  description='Confronti solo con chi ha giocato le stesse partite.';
+ }else if(key==='trend'&&samples.trend>=2){
+  value=samples.trend+' partite';
+  description='Confronto tra la prima e la seconda metà delle partite datate.';
+ }else if(key==='profile'&&p.enough){
+  value=p.games+' partite';
+  description='Riepilogo costruito con almeno 3 partite e 12 punteggi noti.';
+ }
+ return {key,title:metricNames[key],value,description,available:value!=='Dati insufficienti'};
+}
+function render(report,escape,selectedPlayer){
+ const esc=typeof escape==='function'?escape:v=>String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'"').replace(/"/g,'&quot;');
+ if(!report.players.length)return '<p class="subtle">Non ci sono partite concluse da analizzare con questi filtri.</p>';
+ const chosen=report.players.some(p=>p.name===selectedPlayer)?selectedPlayer:report.players[0].name;
+ const primary=['lost','closure','risk','comeback'];
+ const secondary=['choice','decisive','penalties','opponents','trend','profile'];
+ const card=(p,key,compact=false)=>{
+  const info=insight(p,key);
+  return '<button type="button" class="advanced-insight'+(compact?' advanced-insight-small':'')+'" data-analytics-name="'+esc(p.name)+'" data-analytics-key="'+key+'" aria-label="'+esc(info.title+': '+info.value+'. Apri dettagli')+'"><strong>'+esc(info.title)+'</strong><span class="advanced-value'+(info.available?'':' advanced-empty')+'">'+esc(info.value)+'</span><small>'+esc(info.description)+'</small><span class="advanced-more" aria-hidden="true">Dettagli ›</span></button>';
+ };
+ return '<div class="advanced-analytics"><div class="advanced-intro"><strong>Le tue partite, spiegate semplice</strong><p>Seleziona un giocatore. Prima trovi quattro risposte utili; le altre curiosità sono sotto. Tocca un risultato per capire da quali mani arriva.</p><small>'+report.games+' partite concluse nei filtri scelti · “Dati insufficienti” non significa zero.</small></div>'+
+ report.players.map(p=>{
+  const used=p.contracts.filter(c=>c.hands);
+  return '<details class="advanced-player" data-advanced-player="'+esc(p.name)+'" '+(p.name===chosen?'open':'')+'><summary><span class="advanced-player-name">'+esc(p.name)+'</span><span class="advanced-player-count">'+p.games+' '+(p.games===1?'partita':'partite')+' · '+p.hands+' mani</span></summary>'+
+  '<div class="advanced-player-content"><h3>In breve</h3><div class="advanced-grid advanced-highlights">'+primary.map(key=>card(p,key)).join('')+'</div>'+
+  '<details class="advanced-more-section"><summary>Altre curiosità <span>'+secondary.length+'</span></summary><div class="advanced-grid advanced-more-grid">'+secondary.map(key=>card(p,key,true)).join('')+'</div></details>'+
+  '<details class="advanced-contracts"><summary>Guarda i contratti <span>'+used.length+'</span></summary><p class="subtle">Tocca un contratto per vedere punti, chiusure e dati disponibili. Mancare un dato non equivale a zero.</p><div class="advanced-grid advanced-more-grid">'+used.map(c=>cardContract(p,c)).join('')+'</div></details>'+
+  '</div></details>';
+ }).join('')+'</div>';
+ function cardContract(p,c){
+  const key='contract:'+c.number,info=detail(report,p.name,key);
+  return '<button type="button" class="advanced-insight advanced-insight-small" data-analytics-name="'+esc(p.name)+'" data-analytics-key="'+key+'"><strong>Contratto '+c.number+(c.number===16?' · Bitiş':'')+'</strong><span class="advanced-value">'+c.hands+' '+(c.hands===1?'mano':'mani')+'</span><small>'+c.closures+' chiuse su '+c.closuresKnown+' con vincitore noto · '+c.points.length+' punteggi noti</small><span class="advanced-more" aria-hidden="true">Dettagli ›</span></button>';
+ }
 }
 
 root.AmerikanoAnalytics=Object.freeze({analyze,fmt,pct,detail,render,metricNames});
