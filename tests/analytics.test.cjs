@@ -94,3 +94,12 @@ test('A game with missing winning-round history does not count as a game without
  assert.equal(p.withoutClose.games,0);
  assert.equal(p.closeKnown,1);
 });
+
+test('Opponent contract comparison uses only identical rounds actually played together',()=>{
+ const a=api(),first=game([round(1,0,[0,50]),round(2,1,[25,0]),round(1,0,[0,60])]),other=game([round(1,0,[0,30])],{players:['A','C']});
+ const d=a.analyze([first,other]),p=d.players.find(x=>x.name==='A'),b=p.opponents.find(x=>x.name==='B'),c=p.opponents.find(x=>x.name==='C');
+ assert.equal(b.contracts['1'].hands,2);assert.equal(b.contracts['1'].ourPoints,0);
+ assert.equal(b.contracts['1'].otherPoints,110);assert.equal(b.contracts['2'].hands,1);
+ assert.equal(c.contracts['1'].hands,1);
+ assert.match(a.detail(d,'A','opponents').lines.join(' '),/C1: 2 mani insieme/);
+});
