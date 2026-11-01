@@ -118,7 +118,7 @@ test('Readable overview shows four answers first and six optional curiosities pe
  assert.match(html,/In breve/);
  assert.match(html,/Altre curiosità/);
  assert.equal((html.match(/class="advanced-insight"/g)||[]).length,8);
- assert.equal((html.match(/class="advanced-insight advanced-insight-small"/g)||[]).length,12);
+ assert.equal((html.match(/class="advanced-insight advanced-insight-small"/g)||[]).length,16); // six curiosities and two observed contracts per player
  for(const name of ['lost','closure','risk','comeback','choice','decisive','penalties','opponents','trend','profile']){
   assert.equal((html.match(new RegExp('data-analytics-key="'+name+'"','g'))||[]).length,2,name);
  }
@@ -142,8 +142,8 @@ test('Do not label a single contract the safest without at least two comparable 
  assert.match(html,/Dati insufficienti/);
  assert.equal(a.detail(r,'A','risk').value,'Dati insufficienti');
  const r2=a.analyze([game([round(1,0,[0,40]),round(2,1,[40,0]),round(1,0,[0,40]),round(2,0,[0,50]),round(1,1,[50,0]),round(2,0,[0,30])])]);
- assert.match(a.render(r2),/Contratto 1/);
- assert.equal(a.detail(r2,'A','risk').value,'Contratto 1');
+ assert.match(a.render(r2),/Contratto 2/);
+ assert.equal(a.detail(r2,'A','risk').value,'Contratto 2');
 });
 test('Overview only opens the selected player and keeps others collapsed on re-render',()=>{
  const a=api(),r=a.analyze([game([round(1,0,[0,20])])]);
