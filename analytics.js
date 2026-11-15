@@ -13,8 +13,7 @@ function winner(round){
 }
 function openingStatus(round,i,win=winner(round)){
  const recorded=round.results?.[i]?.didNotOpen;
- if(win===i)return false;
- if(Number(round.contract)===16&&win!==null)return true;
+ if(Number(round.contract)===16&&win!==null)return win!==i;
  return recorded;
 }
 const contract=n=>({number:n,hands:0,points:[],closures:0,closuresKnown:0,notOpened:0,openingKnown:0,lostPoints:[],chosen:[],notChosen:[],entries:[]});
