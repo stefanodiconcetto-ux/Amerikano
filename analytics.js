@@ -11,6 +11,12 @@ function winner(round){
  const flags=(round?.results||[]).map((x,i)=>x?.winner===true?i:-1).filter(i=>i>=0);
  return flags.length===1?flags[0]:null;
 }
+function openingStatus(round,i,win=winner(round)){
+ const recorded=round.results?.[i]?.didNotOpen;
+ if(win===i)return false;
+ if(Number(round.contract)===16&&win!==null)return true;
+ return recorded;
+}
 const contract=n=>({number:n,hands:0,points:[],closures:0,closuresKnown:0,notOpened:0,openingKnown:0,lostPoints:[],chosen:[],notChosen:[],entries:[]});
 const person=name=>({name,games:0,hands:0,points:[],closed:0,closeKnown:0,lostPoints:[],openingKnown:0,notOpened:0,penalties:0,penaltyKnown:0,penaltyUnknown:0,contracts:Array.from({length:16},(_,i)=>contract(i+1)),events:[],comebacks:0,leadHeld:0,decisive:null,withClose:{games:0,wins:0},withoutClose:{games:0,wins:0},penaltyScenarios:[],opponents:new Map(),timeline:[]});
 const day=g=>String(g.startedAt||g.endedAt||g.id||'Partita');
@@ -30,7 +36,7 @@ function analyze(source){
     if(score===null)complete[i]=false;else{totals[i]+=score;p.points.push(score);}
     if(win!==null){p.closeKnown++;if(c)c.closuresKnown++;if(win===i){p.closed++;closures[i]++;if(c)c.closures++;}else if(score!==null){p.lostPoints.push(score);if(c)c.lostPoints.push(score);}}
     if(c){c.hands++;if(score!==null)c.points.push(score);c.entries.push(label+' · mano '+(ri+1)+' · '+(score===null?'punteggio sconosciuto':score+' punti')+(win===null?' · chiusura sconosciuta':win===i?' · chiusa':' · non chiusa'));}
-    if(typeof r.didNotOpen==='boolean'){p.openingKnown++;if(r.didNotOpen)p.notOpened++;if(c){c.openingKnown++;if(r.didNotOpen)c.notOpened++;}}
+    const opened=openingStatus(round,i,win);if(typeof opened==='boolean'){p.openingKnown++;if(opened)p.notOpened++;if(c){c.openingKnown++;if(opened)c.notOpened++;}}
     if(inf===null){penaltyComplete[i]=false;p.penaltyUnknown++;}else{p.penaltyKnown++;p.penalties+=inf;penalties[i]+=inf;}
     if(c&&voluntary&&score!==null&&win!==null)(round.chooser===i?c.chosen:c.notChosen).push({score,won:win===i});
    });
@@ -45,7 +51,7 @@ function analyze(source){
     if(pos[0]>1&&pos[pos.length-1]===1)p.comebacks++;
     if(pos.every(x=>x===1))p.leadHeld++;
    }
-   p.timeline.push({when:date(g),label,rounds:g.rounds.length,points:totals[i],closed:closures[i],win,position:final[i],openingKnown:g.rounds.filter(r=>typeof r.results?.[i]?.didNotOpen==='boolean').length,notOpened:g.rounds.filter(r=>r.results?.[i]?.didNotOpen===true).length});
+   p.timeline.push({when:date(g),label,rounds:g.rounds.length,points:totals[i],closed:closures[i],win,position:final[i],openingKnown:g.rounds.filter(r=>typeof openingStatus(r,i)==='boolean').length,notOpened:g.rounds.filter(r=>openingStatus(r,i)===true).length});
    if(penaltyComplete.every(Boolean)){
     const scenario=rank(totals.map((v,j)=>v-50*penalties[j]));
     p.penaltyScenarios.push({label,actual:final[i],without:scenario[i],penalties:penalties[i]});
