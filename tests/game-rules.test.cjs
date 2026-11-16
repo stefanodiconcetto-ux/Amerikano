@@ -83,3 +83,22 @@ test('Statistiche: Bitiş storico inferito, aperture sconosciute delle altre man
  assert.equal(anna.openingKnown,1);assert.equal(anna.notOpened,1);
  assert.equal(bruno.openingKnown,1);assert.equal(bruno.notOpened,0);
 });
+
+test('PWA: asset aggiornati e cache offline della nuova versione',()=>{
+ const html=fs.readFileSync(__dirname+'/../index.html','utf8');
+ const sw=fs.readFileSync(__dirname+'/../sw.js','utf8');
+ for(const file of ['styles.css','analytics.js','app.js'])assert.ok(html.includes('./'+file+'?v=20261116-mani-bitish-v1'),file);
+ assert.match(sw,/offline-network-first-v7/);
+});
+test('Bitiş sul pannello amministratore: un punto senza selezionare vincitore marca non aperto',async()=>{
+ const c=context(),args=[];
+ c.ownerCanEdit=()=>true;
+ c.ownerBoardDrafts={1:{points:'1',infractions:0,discardTakes:0,winner:false,didNotOpen:false}};
+ c.ownerBoardRound='ABC:16';
+ c.collabRoom.current_round.roundNo=16;
+ c.ShareService.submitScoreAsOwner=async(...p)=>{args.push(p);return true;};
+ vm.runInContext(extract('saveOwnerBoardRow'),c);
+ assert.equal(await c.saveOwnerBoardRow(1),true);
+ assert.equal(args[0][2],1);
+ assert.equal(args[0][6],true);
+});
